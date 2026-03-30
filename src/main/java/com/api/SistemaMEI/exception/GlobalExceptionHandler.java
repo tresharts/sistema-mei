@@ -31,11 +31,11 @@ public class GlobalExceptionHandler {
         problem.setTitle("Dados inválidos");
 
         List<String> erros =
-                ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(erro -> erro.getField() + ": " + erro.getDefaultMessage())
-                .toList();
+            ex.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .map(erro -> erro.getField() + ": " + erro.getDefaultMessage())
+            .toList();
 
         problem.setProperty("erros", erros);
         return problem;
