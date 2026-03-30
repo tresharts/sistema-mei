@@ -13,7 +13,7 @@ import java.util.UUID;
 @Service
 public class TokenService {
 
-    @Value("${api.security.token.secret}")
+    @Value("${JWT_SECRET}")
     private String secret;
 
     public String generateAcessToken(Usuario usuario) {

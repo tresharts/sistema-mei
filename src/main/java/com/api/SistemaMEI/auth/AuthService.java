@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -61,6 +63,33 @@ public class AuthService {
             refreshToken.getToken(),
             usuario.getNome(),
             usuario.getEmail()
+        );
+    }
+
+    @Transactional
+    public AuthResponse loginWithGoogle(String email, String nome) {
+        Usuario usuario = userRepository
+            .findByEmail(email)
+            .orElseGet(() -> {
+                Usuario novoUsuario = Usuario
+                    .builder()
+                    .nome(nome)
+                    .email(email)
+                    .senha(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .build();
+
+                return userRepository.save(novoUsuario);
+            });
+
+
+        String acessToken = tokenService.generateAcessToken(usuario);
+        RefreshToken refreshToken = tokenService.generateRefreshToken(usuario);
+        refreshTokenRepository.save(refreshToken);
+        return new AuthResponse(
+                acessToken,
+                refreshToken.getToken(),
+                usuario.getNome(),
+                usuario.getEmail()
         );
     }
 
