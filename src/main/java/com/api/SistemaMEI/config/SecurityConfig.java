@@ -3,8 +3,6 @@ package com.api.SistemaMEI.config;
 import com.api.SistemaMEI.auth.AuthResponse;
 import com.api.SistemaMEI.auth.AuthService;
 import com.api.SistemaMEI.auth.SecurityFilter;
-import com.api.SistemaMEI.auth.TokenService;
-import com.api.SistemaMEI.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -14,8 +12,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -55,7 +51,7 @@ public class SecurityConfig {
                             AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
 
                             String urlRedirect = frontendUrl
-                                    + "/google-callback?token"
+                                    + "/google-callback?token="
                                     + returnTokens.acessToken()
                                     + "&refreshToken="
                                     + returnTokens.refreshToken();
