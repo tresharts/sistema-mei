@@ -1,0 +1,29 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity "usuarios" as usuarios {
+  * id : BIGSERIAL <<PK>>
+  --
+  * nome : VARCHAR(120)
+  * email : VARCHAR(150) <<UNIQUE>>
+  * senha_hash : VARCHAR(255)
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+entity "movimentacoes" as movimentacoes {
+  * id : BIGSERIAL <<PK>>
+  --
+  * usuario_id : BIGINT <<FK>>
+  * tipo : VARCHAR(20)
+  * origem : VARCHAR(20)
+  * descricao : VARCHAR(255)
+  * valor : NUMERIC(12,2)
+  * data_movimentacao : DATE
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+usuarios ||--o{ movimentacoes : possui
+@enduml
