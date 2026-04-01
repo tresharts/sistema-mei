@@ -51,7 +51,7 @@ public class SecurityConfig {
                             AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
 
                             String urlRedirect = frontendUrl
-                                    + "/google-callback?token="
+                                    + "/google-callback#token="
                                     + returnTokens.acessToken()
                                     + "&refreshToken="
                                     + returnTokens.refreshToken();
