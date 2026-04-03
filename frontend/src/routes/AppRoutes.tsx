@@ -1,0 +1,33 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import AppShell from "../components/layout/AppShell";
+import DashboardPage from "../pages/DashboardPage";
+import HistoryPage from "../pages/HistoryPage";
+import LoginPage from "../pages/LoginPage";
+import NewTransactionPage from "../pages/NewTransactionPage";
+import SettingsPage from "../pages/SettingsPage";
+import { ROUTE_PATHS } from "../lib/constants";
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path={ROUTE_PATHS.login} element={<LoginPage />} />
+
+      <Route element={<AppShell />}>
+        <Route path={ROUTE_PATHS.dashboard} element={<DashboardPage />} />
+        <Route path={ROUTE_PATHS.history} element={<HistoryPage />} />
+        <Route
+          path={ROUTE_PATHS.newTransaction}
+          element={<NewTransactionPage />}
+        />
+        <Route path={ROUTE_PATHS.settings} element={<SettingsPage />} />
+      </Route>
+
+      <Route
+        path="*"
+        element={<Navigate to={ROUTE_PATHS.dashboard} replace />}
+      />
+    </Routes>
+  );
+}
+
+export default AppRoutes;

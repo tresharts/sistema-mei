@@ -35,3 +35,4 @@ build/
 .env
 documents/
 AGENTS.md
+.pnpm-store/
