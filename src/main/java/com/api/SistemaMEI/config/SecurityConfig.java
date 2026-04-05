@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,35 +31,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(req -> {
-                    req.requestMatchers(HttpMethod.POST, "/auth/register")
-                            .permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/auth/login")
-                            .permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/auth/refresh")
-                            .permitAll();
-                    req.anyRequest().authenticated();
-                })
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler((request, response, authentication) -> {
-                            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(Customizer.withDefaults())
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(req -> {
+                req.requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll();
+                req.requestMatchers(HttpMethod.POST, "/auth/register")
+                    .permitAll();
+                req.requestMatchers(HttpMethod.POST, "/auth/login")
+                    .permitAll();
+                req.requestMatchers(HttpMethod.POST, "/auth/refresh")
+                    .permitAll();
+                req.anyRequest().authenticated();
+            })
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler((request, response, authentication) -> {
+                    OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-                            String email = oAuth2User.getAttribute("email");
-                            String nome = oAuth2User.getAttribute("name");
+                    String email = oAuth2User.getAttribute("email");
+                    String nome = oAuth2User.getAttribute("name");
 
-                            AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
+                    AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
 
-                            String urlRedirect = frontendUrl
-                                    + "/google-callback#token="
-                                    + returnTokens.acessToken()
-                                    + "&refreshToken="
-                                    + returnTokens.refreshToken();
+                    String urlRedirect = frontendUrl
+                            + "/google-callback#token="
+                            + returnTokens.acessToken()
+                            + "&refreshToken="
+                            + returnTokens.refreshToken();
 
-                            response.sendRedirect(urlRedirect);
-                        }))
-                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
+                    response.sendRedirect(urlRedirect);
+                }))
+            .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
     }
 }
