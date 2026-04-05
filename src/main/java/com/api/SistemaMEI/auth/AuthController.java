@@ -3,10 +3,10 @@ package com.api.SistemaMEI.auth;
 import com.api.SistemaMEI.usuario.Usuario;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +36,7 @@ public class AuthController {
         return ResponseEntity.ok(service.refresh(request.refreshToken()));
     }
 
+    @DeleteMapping("/logout")
     public ResponseEntity<Void> logout(@AuthenticationPrincipal Usuario usuario) {
         service.logout(usuario);
         return ResponseEntity.noContent().build();

@@ -112,6 +112,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public void logout(Usuario usuario) {
         refreshTokenRepository.deleteByUsuario(usuario);
     }

@@ -34,6 +34,8 @@ api:
   security:
     token:
       secret: ${JWT_SECRET}
+  cors:
+    origem: ${CORS_ORIGIN:http://localhost:5173}
 
 frontend:
-  url: ${CORS_ORIGIN:http://localhost:5173}
+  url: ${FRONTEND_URL:http://localhost:5173}
