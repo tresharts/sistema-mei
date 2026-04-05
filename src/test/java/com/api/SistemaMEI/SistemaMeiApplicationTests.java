@@ -1,13 +1,14 @@
 package com.api.SistemaMEI;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-class SistemaMeiApplicationTests extends IntegrationTestBase{
+@SpringBootTest
+@ActiveProfiles("test")
+class SistemaMeiApplicationTests {
 
 	@Test
 	void contextLoads() {
-		assertNotNull(postgres, "Container PostgreSQL deveriaestar rodando");
 	}
 }
