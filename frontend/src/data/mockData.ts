@@ -8,6 +8,8 @@ import type {
   TransactionItem,
 } from "../types/finance";
 
+
+
 export const dashboardHighlights: DashboardHighlight[] = [
   {
     label: "Quanto entrou hoje",

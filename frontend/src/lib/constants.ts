@@ -3,9 +3,12 @@ import type { NavItem } from "../types/navigation";
 export const ROUTE_PATHS = {
   dashboard: "/",
   login: "/login",
+  esqueciSenha: "/redefinir-senha",
+  cadastro: "/cadastro",
   history: "/historico",
   newTransaction: "/movimentacoes/nova",
   settings: "/ajustes",
+  googleCallback: "/google-callback",
 } as const;
 
 export const APP_NAVIGATION: NavItem[] = [

@@ -1,17 +1,47 @@
-import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { api } from "../lib/api";
+import Input from "../components/ui/Input";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import AppIcon from "../components/ui/AppIcon";
-import Input from "../components/ui/Input";
-import { loginHighlights } from "../data/mockData";
 import { ROUTE_PATHS } from "../lib/constants";
+const loginSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  senha: z.string().min(6, "Senha curta demais"),
+});
+
+const loginHighlights = [
+  "Gestão de vendas rápida",
+  "Relatórios automáticos",
+  "Segurança de nível bancário"
+];
+
+type LoginForm = z.infer<typeof loginSchema>;
 
 function LoginPage() {
   const navigate = useNavigate();
+  
+  // Hook Form
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    navigate(ROUTE_PATHS.dashboard);
+  //(Passo 2)
+  const onSubmit = async (data: LoginForm) => {
+    try {
+      const response = await api.post("/auth/login", data);
+      const { acessToken, refreshToken } = response.data;
+
+      localStorage.setItem("@SistemaMEI:token", acessToken);
+      localStorage.setItem("@SistemaMEI:refreshToken", refreshToken);
+      
+      navigate(ROUTE_PATHS.dashboard);
+    } catch (error: any) {
+      console.error("Erro ao fazer login:", error.response || error);
+      alert("Falha no login. Verifique suas credenciais.");
+    }
   };
 
   return (
@@ -60,37 +90,67 @@ function LoginPage() {
             </h2>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <label className="text-sm font-medium text-on-surface-variant" htmlFor="email">
                 E-mail
               </label>
-              <Input id="email" placeholder="seuemail@exemplo.com" type="email" />
+              <Input
+                {...register("email")} 
+                id="email" 
+                placeholder="seuemail@exemplo.com" 
+                type="email"
+                error={errors.email?.message}
+                />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-on-surface-variant" htmlFor="password">
-                Senha
-              </label>
-              <Input id="password" placeholder="Digite sua senha" type="password" />
+              <div className="flex justify-between"> 
+                  <label className="text-sm font-medium text-on-surface-variant flex  flex-order-1" htmlFor="senha">
+                    Senha
+                  </label>
+                  <button className="font-semibold text-primary flex-order-0" type="button">
+                    Esqueci minha senha
+
+                  </button>
+              
+              </div>
+              <Input 
+                {...register("senha")}
+                id="password" 
+                placeholder="Digite sua senha" 
+                type="password"
+                error={errors.senha?.message}
+                
+                />
             </div>
 
-            <div className="flex items-center justify-between text-xs text-on-surface-variant">
-              <span>Ambiente inicial sem API real</span>
-              <button className="font-semibold text-primary" type="button">
-                Esqueci a senha
-              </button>
-            </div>
+        
 
-            <Button className="font-headline text-base font-bold" fullWidth type="submit">
+            <Button 
+                className="font-headline text-base font-bold" 
+                fullWidth type="submit"
+                typeof="submit"
+                >
               Entrar no prototipo
             </Button>
           </form>
 
-          <p className="mt-5 text-center text-xs leading-5 text-on-surface-variant">
+          <footer className="mt-8 text-center">
+            <p className="text-sm text-on-surface-variant">
+             Não tem uma conta?{" "}
+             <Link 
+               to={ROUTE_PATHS.cadastro} 
+              className="font-bold text-primary hover:underline transition-all"   
+              >
+              Cadastre-se agora
+              </Link>
+            </p>
+          </footer>
+          {/* <p className="mt-5 text-center text-xs leading-5 text-on-surface-variant">
             Ao entrar, voce acessa as telas iniciais de dashboard, historico,
             movimentacoes e ajustes com dados mockados.
-          </p>
+          </p> */}
         </section>
       </div>
     </main>

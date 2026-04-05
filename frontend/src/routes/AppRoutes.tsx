@@ -6,11 +6,15 @@ import LoginPage from "../pages/LoginPage";
 import NewTransactionPage from "../pages/NewTransactionPage";
 import SettingsPage from "../pages/SettingsPage";
 import { ROUTE_PATHS } from "../lib/constants";
+import CadastroPage from "../pages/CadastroPage";
+import RedefinirSenha from "../pages/RedefinirSenha";
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path={ROUTE_PATHS.login} element={<LoginPage />} />
+      <Route path={ROUTE_PATHS.cadastro} element={<CadastroPage />} />
+      <Route path={ROUTE_PATHS.esqueciSenha} element={<RedefinirSenha />} />
 
       <Route element={<AppShell />}>
         <Route path={ROUTE_PATHS.dashboard} element={<DashboardPage />} />
