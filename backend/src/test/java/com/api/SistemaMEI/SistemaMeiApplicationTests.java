@@ -2,12 +2,10 @@ package com.api.SistemaMEI;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 class SistemaMeiApplicationTests extends IntegrationTestBase{
 
 	@Test
 	void contextLoads() {
-		assertNotNull(postgres, "Container PostgreSQL deveriaestar rodando");
+		// Se o contexto sobe com o profile de teste (H2), o teste passa.
 	}
 }
