@@ -13,3 +13,25 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+            scope: profile, email
+
+  devtools:
+    restart:
+      enabled: false
+
+api:
+  cors:
+    origem: http://localhost:5173
+
+frontend:
+  url: http://localhost:5173
+
+JWT_SECRET: test-jwt-secret

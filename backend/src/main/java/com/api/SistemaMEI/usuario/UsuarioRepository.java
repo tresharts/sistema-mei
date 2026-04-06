@@ -14,6 +14,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     @Query("SELECT u FROM Usuario u WHERE u.email = :email")
     Optional<Usuario> findByEmail(@Param("email") String email);
 
-    @Query("SELECT COUNT(u) < 0 FROM Usuario u WHERE u.email = :email")
+    @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE u.email = :email")
     boolean existsByEmail(@Param("email") String email);
 }
