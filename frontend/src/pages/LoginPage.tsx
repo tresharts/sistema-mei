@@ -34,8 +34,8 @@ function LoginPage() {
       const response = await api.post("/auth/login", data);
       const { acessToken, refreshToken } = response.data;
 
-      localStorage.setItem("@SistemaMEI:token", acessToken);
-      localStorage.setItem("@SistemaMEI:refreshToken", refreshToken);
+      localStorage.setItem("acessToken", acessToken);
+      localStorage.setItem("refreshToken", refreshToken);
       
       navigate(ROUTE_PATHS.dashboard);
     } catch (error: any) {
@@ -59,10 +59,6 @@ function LoginPage() {
             <h1 className="max-w-[12ch] font-headline text-4xl font-extrabold leading-tight tracking-tight text-on-surface">
               Controle financeiro simples para o seu atelie.
             </h1>
-            <p className="max-w-[32ch] text-sm leading-6 text-on-surface-variant">
-              Interface acolhedora, mobile-first e pronta para receber autenticacao
-              real com Spring Boot nas proximas etapas.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
@@ -110,7 +106,9 @@ function LoginPage() {
                     Senha
                   </label>
                   <button className="font-semibold text-primary flex-order-0" type="button">
-                    Esqueci minha senha
+                    <Link to={ROUTE_PATHS.esqueciSenha}>
+                      Esqueci minha senha
+                    </Link>
 
                   </button>
               
@@ -132,7 +130,7 @@ function LoginPage() {
                 fullWidth type="submit"
                 typeof="submit"
                 >
-              Entrar no prototipo
+              Entrar 
             </Button>
           </form>
 

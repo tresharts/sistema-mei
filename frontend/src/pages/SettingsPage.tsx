@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
 import AppIcon from "../components/ui/AppIcon";
-import {
-  notificationPreferences,
-  settingsCategories,
-} from "../data/mockData";
-import { ROUTE_PATHS } from "../lib/constants";
+import {notificationPreferences, settingsCategories, } from "../data/mockData";
 
+import { ROUTE_PATHS } from "../lib/constants";
+  
 function SettingsPage() {
   const [notifications, setNotifications] = useState(notificationPreferences);
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("acessToken");
+    localStorage.removeItem("refreshToken");
+     
+    localStorage.clear(); // limpa o token
+
+    navigate(ROUTE_PATHS.login, {replace: true});
+  }
   return (
     <div className="space-y-10">
       <section className="space-y-4">
@@ -22,7 +29,7 @@ function SettingsPage() {
               type="button"
             >
               <AppIcon className="h-4 w-4" name="edit" />
-            </button>
+            </button>x
           </div>
 
           <div className="flex-1">
@@ -177,10 +184,6 @@ function SettingsPage() {
           </div>
         </div>
 
-        <p className="text-sm leading-relaxed text-on-surface-variant">
-          Quando o backend estiver pronto, esta area pode concentrar ajuda,
-          suporte e orientacoes praticas para o uso do sistema.
-        </p>
 
         <button
           className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
@@ -192,13 +195,14 @@ function SettingsPage() {
       </section>
 
       <div className="space-y-6 pb-8 pt-2">
-        <Link
+       <button
+          onClick={handleLogout}
           className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
-          to={ROUTE_PATHS.login}
+          type="button"
         >
           <AppIcon name="logout" />
           Sair da conta
-        </Link>
+        </button>
         <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
           Sistema MEI v0.1.0
         </p>
