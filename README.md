@@ -45,15 +45,20 @@ Em outro terminal:
 ```bash
 cd frontend
 npm install
-npm run dev -- --host 0.0.0.0 --port 5173
+npm run dev
 ```
 
 Se voce usa `pnpm`, pode trocar por:
 
 ```bash
 pnpm install
-pnpm dev --host 0.0.0.0 --port 5173
+pnpm dev
 ```
+
+Opcional:
+
+- para expor na rede local (ex.: celular), rode com `--host 0.0.0.0`
+- para escolher porta, use `--port <porta>`
 
 ## Variaveis de ambiente
 
@@ -73,6 +78,11 @@ JWT_SECRET=dev-jwt-secret-local
 GOOGLE_CLIENT_ID=dev-google-client-id
 GOOGLE_CLIENT_SECRET=dev-google-client-secret
 ```
+
+Observacao sobre CORS local:
+
+- o backend aceita `localhost` e `127.0.0.1` em qualquer porta local
+- `CORS_ORIGIN`/`FRONTEND_URL` continuam uteis para definir origem principal em ambientes publicados
 
 ### Frontend
 
@@ -103,6 +113,6 @@ Alias aceito:
 
 ## Enderecos locais
 
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:5173` (padrao do Vite) ou outra porta local
 - Backend: `http://localhost:8080`
 - H2 Console (quando habilitado): `http://localhost:8080/h2-console`
