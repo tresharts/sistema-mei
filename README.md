@@ -22,7 +22,26 @@ No fluxo de desenvolvimento local atual, o backend roda com H2 para facilitar te
 
 ## Desenvolvimento local
 
-### 1) Backend (H2)
+### 1) MVP rapido (frontend + backend)
+
+Na raiz do projeto:
+
+```bash
+./dev.sh up
+```
+
+Comandos disponiveis:
+
+```bash
+./dev.sh up      # sobe backend + frontend em background
+./dev.sh down    # derruba os dois servicos
+./dev.sh status  # mostra status e caminhos dos logs
+```
+
+Logs e PIDs ficam em `.dev/` (ignorado no Git).
+No frontend, o script usa `pnpm dev` quando `pnpm` estiver instalado; caso contrario usa `npm run dev`.
+
+### 2) Backend (H2)
 
 No backend existe um script para padronizar execucao:
 
@@ -38,7 +57,7 @@ Esse comando:
 - libera a porta `8080` se estiver ocupada
 - sobe a API com `spring-boot:run`
 
-### 2) Frontend
+### 3) Frontend
 
 Em outro terminal:
 
