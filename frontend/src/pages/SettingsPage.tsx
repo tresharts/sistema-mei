@@ -34,7 +34,7 @@ function SettingsPage() {
               type="button"
             >
               <AppIcon className="h-4 w-4" name="edit" />
-            </button>x
+            </button>
           </div>
 
           <div className="flex-1">
