@@ -135,15 +135,12 @@ function NewTransactionPage() {
             <AppIcon name="receipt" />
             Salvar movimentacao
           </Button>
-          <button
+          <Link
             className="flex h-14 w-full items-center justify-center rounded-xl text-outline transition hover:bg-surface-container-low"
-            type="button"
+            to={ROUTE_PATHS.dashboard}
           >
-            <Link to={ROUTE_PATHS.dashboard} className="flex items-center gap-2">
-              Voltar para movimentacoes
-            </Link>
-            {/* Cancelar e voltar */}
-          </button>
+            Voltar para movimentacoes
+          </Link>
         </div>
       </div>
     </div>
