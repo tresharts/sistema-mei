@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import java.util.Collections;
 import java.util.UUID;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class SecurityFilter extends OncePerRequestFilter {
 
@@ -49,6 +51,12 @@ public class SecurityFilter extends OncePerRequestFilter {
                         });
                 }
             } catch (Exception e) {
+                log.warn(
+                    "Falha ao validar token JWT em {} {}: {}",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    e.getMessage()
+                );
                 SecurityContextHolder.clearContext();
             }
         }

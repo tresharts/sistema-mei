@@ -1,6 +1,7 @@
 package com.api.SistemaMEI.config;
 
 import com.api.SistemaMEI.auth.AuthResponse;
+import com.api.SistemaMEI.auth.AuthCookieService;
 import com.api.SistemaMEI.auth.AuthService;
 import com.api.SistemaMEI.auth.SecurityFilter;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class SecurityConfig {
 
     private final SecurityFilter securityFilter;
     private final AuthService authService;
+    private final AuthCookieService authCookieService;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -43,6 +45,8 @@ public class SecurityConfig {
                     .permitAll();
                 req.requestMatchers(HttpMethod.POST, "/auth/refresh")
                     .permitAll();
+                req.requestMatchers(HttpMethod.DELETE, "/auth/logout")
+                    .permitAll();
                 req.anyRequest().authenticated();
             })
             .oauth2Login(oauth2 -> oauth2
@@ -53,14 +57,8 @@ public class SecurityConfig {
                     String nome = oAuth2User.getAttribute("name");
 
                     AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
-
-                    String urlRedirect = frontendUrl
-                            + "/google-callback#token="
-                            + returnTokens.acessToken()
-                            + "&refreshToken="
-                            + returnTokens.refreshToken();
-
-                    response.sendRedirect(urlRedirect);
+                    authCookieService.addRefreshTokenCookie(response, returnTokens.refreshToken());
+                    response.sendRedirect(frontendUrl + "/google-callback");
                 }))
             .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
