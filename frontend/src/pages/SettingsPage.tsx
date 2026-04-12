@@ -62,9 +62,10 @@ function SettingsPage() {
                 R$
               </span>
               <input
-                className="h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className=" h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 defaultValue="72,00"
-                type="text"
+                type="number"
+                
               />
             </div>
           </label>

@@ -3,6 +3,8 @@ import Button from "../components/ui/Button";
 import AppIcon from "../components/ui/AppIcon";
 import Input from "../components/ui/Input";
 import { transactionCategories } from "../data/mockData";
+import { Link } from "react-router-dom";
+import { ROUTE_PATHS } from "../lib/constants";
 
 function NewTransactionPage() {
   const [transactionKind, setTransactionKind] = useState<"income" | "expense">(
@@ -137,7 +139,10 @@ function NewTransactionPage() {
             className="flex h-14 w-full items-center justify-center rounded-xl text-outline transition hover:bg-surface-container-low"
             type="button"
           >
-            Cancelar e voltar
+            <Link to={ROUTE_PATHS.dashboard} className="flex items-center gap-2">
+              Voltar para movimentacoes
+            </Link>
+            {/* Cancelar e voltar */}
           </button>
         </div>
       </div>
