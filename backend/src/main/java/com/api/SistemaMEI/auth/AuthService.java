@@ -115,8 +115,7 @@ public class AuthService {
             newAcessToken,
             newRefreshToken.getToken(),
             usuario.getNome(),
-            usuario.getEmail(),
-            newRefreshToken.getToken()
+            usuario.getEmail()
         );
     }
 

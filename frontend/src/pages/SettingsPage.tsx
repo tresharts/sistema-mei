@@ -5,19 +5,24 @@ import AppIcon from "../components/ui/AppIcon";
 import {notificationPreferences, settingsCategories, } from "../data/mockData";
 
 import { ROUTE_PATHS } from "../lib/constants";
+import { api } from "../lib/api";
   
 function SettingsPage() {
   const [notifications, setNotifications] = useState(notificationPreferences);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("acessToken");
-    localStorage.removeItem("refreshToken");
-     
-    localStorage.clear(); // limpa o token
-
-    navigate(ROUTE_PATHS.login, {replace: true});
-  }
+  const handleLogout = async () => {
+    try {
+      await api.delete("/auth/logout");
+    } catch (error) {
+      console.warn("Nao foi possivel revogar sessao no backend:", error);
+    } finally {
+      localStorage.removeItem("acessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.clear();
+      navigate(ROUTE_PATHS.login, {replace: true});
+    }
+  };
   return (
     <div className="space-y-10">
       <section className="space-y-4">
@@ -63,9 +68,9 @@ function SettingsPage() {
               </span>
               <input
                 className=" h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                defaultValue="72,00"
+                defaultValue="72.00"
                 type="number"
-                
+                step="0.01"
               />
             </div>
           </label>

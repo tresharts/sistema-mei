@@ -3,6 +3,12 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
+
+interface RefreshResponse {
+  acessToken: string;
+  refreshToken?: string | null;
+  newRefreshToken?: string | null;
+}
   
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -26,18 +32,22 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (!storedRefreshToken) {
+          return Promise.reject(error);
+        }
         
-        
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
-          refreshToken: refreshToken
-        });
+        const response = await axios.post<RefreshResponse>(
+          `${import.meta.env.VITE_API_URL}/auth/refresh`,
+          { refreshToken: storedRefreshToken }
+        );
 
-        const { acessToken, newRefreshToken } = response.data;
+        const { acessToken, refreshToken, newRefreshToken } = response.data;
+        const nextRefreshToken = newRefreshToken ?? refreshToken;
 
         // Salva os novos tokens
         localStorage.setItem('acessToken', acessToken);
-        if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+        if (nextRefreshToken) localStorage.setItem('refreshToken', nextRefreshToken);
 
 
         originalRequest.headers.Authorization = `Bearer ${acessToken}`;
