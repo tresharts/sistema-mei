@@ -35,6 +35,7 @@ build/
 documents/
 AGENTS.md
 .pnpm-store/
+.dev/
 
 # Monorepo
 /backend/target/

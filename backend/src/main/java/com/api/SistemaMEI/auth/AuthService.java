@@ -93,6 +93,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public AuthResponse refresh(String token) {
         RefreshToken refreshToken = refreshTokenRepository
             .findByToken(token)
@@ -103,12 +104,19 @@ public class AuthService {
             throw new BusinessRuleException("Token expired, please login again");
         }
 
-        String newAcessToken = tokenService.generateAcessToken(refreshToken.getUsuario());
+        Usuario usuario = refreshToken.getUsuario();
+        String newAcessToken = tokenService.generateAcessToken(usuario);
+        RefreshToken newRefreshToken = tokenService.generateRefreshToken(usuario);
+
+        refreshTokenRepository.delete(refreshToken);
+        refreshTokenRepository.save(newRefreshToken);
+
         return new AuthResponse(
             newAcessToken,
-            refreshToken.getToken(),
-            refreshToken.getUsuario().getNome(),
-            refreshToken.getUsuario().getEmail()
+            newRefreshToken.getToken(),
+            usuario.getNome(),
+            usuario.getEmail(),
+            newRefreshToken.getToken()
         );
     }
 
