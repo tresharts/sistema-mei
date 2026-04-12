@@ -11,6 +11,7 @@ BACKEND_PID_FILE="$PID_DIR/backend.pid"
 FRONTEND_PID_FILE="$PID_DIR/frontend.pid"
 BACKEND_LOG_FILE="$LOG_DIR/backend.log"
 FRONTEND_LOG_FILE="$LOG_DIR/frontend.log"
+FRONTEND_DEV_API_URL="${FRONTEND_DEV_API_URL:-http://localhost:8080}"
 
 MODE="${1:-up}"
 
@@ -90,8 +91,8 @@ start_frontend() {
     run_cmd="npm run dev"
   fi
 
-  echo "Subindo frontend com '$run_cmd'..."
-  nohup bash -lc "cd \"$ROOT_DIR/frontend\" && $run_cmd" >>"$FRONTEND_LOG_FILE" 2>&1 &
+  echo "Subindo frontend com '$run_cmd' (VITE_API_URL=$FRONTEND_DEV_API_URL)..."
+  nohup bash -lc "cd \"$ROOT_DIR/frontend\" && VITE_API_URL=\"$FRONTEND_DEV_API_URL\" $run_cmd" >>"$FRONTEND_LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$FRONTEND_PID_FILE"
 
@@ -151,6 +152,7 @@ print_status() {
 
   if is_pid_running "$FRONTEND_PID_FILE"; then
     echo "Frontend: rodando (PID $(cat "$FRONTEND_PID_FILE")) em http://localhost:5173"
+    echo "Frontend API (override no dev.sh): $FRONTEND_DEV_API_URL"
   else
     echo "Frontend: parado"
   fi
