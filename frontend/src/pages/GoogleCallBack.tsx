@@ -7,8 +7,11 @@ function GoogleCallbackPage() {
 
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
-    const token = hashParams.get("token");
-    const refreshToken = hashParams.get("refreshToken");
+    const queryParams = new URLSearchParams(window.location.search);
+
+    const token = hashParams.get("token") ?? queryParams.get("token");
+    const refreshToken =
+      hashParams.get("refreshToken") ?? queryParams.get("refreshToken");
 
     if (token) {
       localStorage.setItem("acessToken", token);
@@ -16,11 +19,19 @@ function GoogleCallbackPage() {
         localStorage.setItem("refreshToken", refreshToken);
       }
 
+      // Remove token/hash da barra para evitar exposição e reprocessamento no refresh.
+      window.history.replaceState(null, "", ROUTE_PATHS.googleCallback);
       navigate(ROUTE_PATHS.dashboard, { replace: true });
-      
-    } else {
-      navigate(ROUTE_PATHS.login, { replace: true });
+      return;
     }
+
+    // Em dev (StrictMode), o effect pode rodar duas vezes; se já salvou token, segue.
+    if (localStorage.getItem("acessToken")) {
+      navigate(ROUTE_PATHS.dashboard, { replace: true });
+      return;
+    }
+
+    navigate(ROUTE_PATHS.login, { replace: true });
   }, [navigate]);
 
   return (
