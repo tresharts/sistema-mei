@@ -36,10 +36,9 @@ function LoginPage() {
     setLoadingEmail(true);
     try {
       const response = await api.post("/auth/login", data);
-      const { acessToken, refreshToken } = response.data;
+      const { acessToken } = response.data;
 
       localStorage.setItem("acessToken", acessToken);
-      localStorage.setItem("refreshToken", refreshToken);
       
       navigate(ROUTE_PATHS.dashboard);
     } catch (error: any) {
@@ -119,7 +118,7 @@ function LoginPage() {
 
             <div className="space-y-2  ">
               <div className="flex justify-between"> 
-                  <label className="text-sm font-medium text-on-surface-variant flex  flex-order-1" htmlFor="senha">
+                  <label className="text-sm font-medium text-on-surface-variant flex  flex-order-1" htmlFor="password">
                     Senha
                   </label>
                     <Link to={ROUTE_PATHS.esqueciSenha}>

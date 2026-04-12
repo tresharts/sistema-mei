@@ -1,37 +1,39 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { refreshSession } from "../lib/api";
 import { ROUTE_PATHS } from "../lib/constants";
 
 function GoogleCallbackPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
-    const queryParams = new URLSearchParams(window.location.search);
+    let mounted = true;
 
-    const token = hashParams.get("token") ?? queryParams.get("token");
-    const refreshToken =
-      hashParams.get("refreshToken") ?? queryParams.get("refreshToken");
-
-    if (token) {
-      localStorage.setItem("acessToken", token);
-      if (refreshToken) {
-        localStorage.setItem("refreshToken", refreshToken);
+    const finishGoogleLogin = async () => {
+      const currentToken = localStorage.getItem("acessToken");
+      if (currentToken) {
+        navigate(ROUTE_PATHS.dashboard, { replace: true });
+        return;
       }
 
-      // Remove token/hash da barra para evitar exposição e reprocessamento no refresh.
-      window.history.replaceState(null, "", ROUTE_PATHS.googleCallback);
-      navigate(ROUTE_PATHS.dashboard, { replace: true });
-      return;
-    }
+      const token = await refreshSession();
+      if (!mounted) {
+        return;
+      }
 
-    // Em dev (StrictMode), o effect pode rodar duas vezes; se já salvou token, segue.
-    if (localStorage.getItem("acessToken")) {
-      navigate(ROUTE_PATHS.dashboard, { replace: true });
-      return;
-    }
+      if (token) {
+        navigate(ROUTE_PATHS.dashboard, { replace: true });
+        return;
+      }
 
-    navigate(ROUTE_PATHS.login, { replace: true });
+      navigate(ROUTE_PATHS.login, { replace: true });
+    };
+
+    finishGoogleLogin();
+
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
   return (

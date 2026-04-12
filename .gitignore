@@ -49,3 +49,4 @@ AGENTS.md
 /frontend/tailwind.config.js
 /frontend/tailwind.config.d.ts
 /frontend/.env
+/frontend/.vite
