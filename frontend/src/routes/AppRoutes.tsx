@@ -13,6 +13,7 @@ import PrivateRoute from "../components/auth/PrivateRoute";
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to={ROUTE_PATHS.login} replace />} />
       <Route path={ROUTE_PATHS.login} element={<LoginPage />} />
       <Route path={ROUTE_PATHS.cadastro} element={<CadastroPage />} />
       <Route path={ROUTE_PATHS.esqueciSenha} element={<RedefinirSenha />} />
