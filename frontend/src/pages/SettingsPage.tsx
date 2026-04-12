@@ -19,7 +19,6 @@ function SettingsPage() {
     } finally {
       localStorage.removeItem("acessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.clear();
       navigate(ROUTE_PATHS.login, {replace: true});
     }
   };

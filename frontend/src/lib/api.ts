@@ -1,17 +1,52 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { ROUTE_PATHS } from './constants';
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-interface RefreshResponse {
-  acessToken: string;
-  refreshToken?: string | null;
-  newRefreshToken?: string | null;
+interface AuthTokenResponse {
+  acessToken?: string | null;
 }
-  
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+let refreshInFlight: Promise<string | null> | null = null;
+
+export async function refreshSession(): Promise<string | null> {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await axios.post<AuthTokenResponse>(
+        `${API_BASE_URL}/auth/refresh`,
+        undefined,
+        { withCredentials: true }
+      );
+
+      const refreshedAcessToken = response.data.acessToken;
+      if (!refreshedAcessToken) {
+        localStorage.removeItem('acessToken');
+        return null;
+      }
+
+      localStorage.setItem('acessToken', refreshedAcessToken);
+      return refreshedAcessToken;
+    } catch {
+      localStorage.removeItem('acessToken');
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
@@ -22,43 +57,41 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-api.interceptors.response.use(
-  (response) => response, // Se a resposta for OK (200), só retorna ela
-  async (error: AxiosError) => {
-    const originalRequest = error.config as CustomAxiosRequestConfig;
+const isAuthEndpoint = (url?: string) => {
+  if (!url) {
+    return false;
+  }
 
-    // Se o erro for 401 (Token expirado) e ainda não tentamos o refresh
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+  return ['/auth/login', '/auth/register', '/auth/refresh'].some((path) =>
+    url.includes(path)
+  );
+};
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as CustomAxiosRequestConfig | undefined;
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       originalRequest._retry = true;
 
-      try {
-        const storedRefreshToken = localStorage.getItem('refreshToken');
-        if (!storedRefreshToken) {
-          return Promise.reject(error);
+      const refreshedAcessToken = await refreshSession();
+      if (!refreshedAcessToken) {
+        if (window.location.pathname !== ROUTE_PATHS.login) {
+          window.location.href = ROUTE_PATHS.login;
         }
-        
-        const response = await axios.post<RefreshResponse>(
-          `${import.meta.env.VITE_API_URL}/auth/refresh`,
-          { refreshToken: storedRefreshToken }
-        );
 
-        const { acessToken, refreshToken, newRefreshToken } = response.data;
-        const nextRefreshToken = newRefreshToken ?? refreshToken;
-
-        // Salva os novos tokens
-        localStorage.setItem('acessToken', acessToken);
-        if (nextRefreshToken) localStorage.setItem('refreshToken', nextRefreshToken);
-
-
-        originalRequest.headers.Authorization = `Bearer ${acessToken}`;
-        return api(originalRequest);
-        
-      } catch (refreshError) {
-        localStorage.removeItem('acessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login'; 
-        return Promise.reject(refreshError);
+        return Promise.reject(error);
       }
+
+      originalRequest.headers = originalRequest.headers ?? {};
+      originalRequest.headers.Authorization = `Bearer ${refreshedAcessToken}`;
+      return api(originalRequest);
     }
 
     return Promise.reject(error);
