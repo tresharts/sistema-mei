@@ -1,0 +1,33 @@
+export type IconName =
+  | "grid"
+  | "add-circle"
+  | "history"
+  | "settings"
+  | "bell"
+  | "plus"
+  | "trend-up"
+  | "sparkles"
+  | "calendar"
+  | "wallet"
+  | "shopping-bag"
+  | "receipt"
+  | "close"
+  | "arrow-up"
+  | "arrow-down"
+  | "tag"
+  | "edit"
+  | "document"
+  | "heart"
+  | "chat"
+  | "logout"
+  | "briefcase"
+  | "user"
+  | "sale"
+  | "box";
+
+export type SurfaceTone =
+  | "primary"
+  | "secondary"
+  | "tertiary"
+  | "danger"
+  | "neutral";

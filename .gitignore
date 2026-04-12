@@ -32,6 +32,20 @@ build/
 ### VS Code ###
 .vscode/
 
-.env
 documents/
 AGENTS.md
+.pnpm-store/
+.dev/
+
+# Monorepo
+/backend/target/
+/backend/.env
+
+/frontend/node_modules/
+/frontend/dist/
+/frontend/*.tsbuildinfo
+/frontend/vite.config.js
+/frontend/vite.config.d.ts
+/frontend/tailwind.config.js
+/frontend/tailwind.config.d.ts
+/frontend/.env
