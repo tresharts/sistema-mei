@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -38,6 +39,19 @@ public class CategoriaService {
         }
 
         return categorias.map(this::toResponse);
+    }
+
+    @Transactional
+    public void criarCategoriasPadrao(Usuario usuario) {
+        List<Categoria> categoriasPadrao = List.of(
+            novaCategoriaPadrao("Vendas", TipoMovimentacao.RECEITA, usuario),
+            novaCategoriaPadrao("Servicos", TipoMovimentacao.RECEITA, usuario),
+            novaCategoriaPadrao("Material", TipoMovimentacao.DESPESA, usuario),
+            novaCategoriaPadrao("Transporte", TipoMovimentacao.DESPESA, usuario),
+            novaCategoriaPadrao("Embalagem", TipoMovimentacao.DESPESA, usuario)
+        );
+
+        repository.saveAll(categoriasPadrao);
     }
 
     @Transactional
@@ -107,5 +121,15 @@ public class CategoriaService {
         }
 
         repository.delete(categoria);
+    }
+
+    private Categoria novaCategoriaPadrao(String nome, TipoMovimentacao tipo, Usuario usuario) {
+        return Categoria
+            .builder()
+            .nome(nome)
+            .tipo(tipo)
+            .padrao(true)
+            .usuario(usuario)
+            .build();
     }
 }
