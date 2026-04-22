@@ -9,7 +9,7 @@ interface AuthTokenResponse {
   acessToken?: string | null;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || '/api';
 let refreshInFlight: Promise<string | null> | null = null;
 
 export async function refreshSession(): Promise<string | null> {
