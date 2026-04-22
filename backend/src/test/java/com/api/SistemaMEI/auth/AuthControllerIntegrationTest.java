@@ -142,6 +142,75 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveRetornar422QuandoRegistrarEmailDuplicado() throws Exception {
+        salvarUsuario("Maria", "maria@teste.com", "senha123");
+        RegisterRequest request = new RegisterRequest("Maria", "maria@teste.com", "senha123");
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.detail").value("Email already in use"));
+    }
+
+    @Test
+    void deveRetornar422QuandoRefreshRecebeTokenInvalidoNoBody() throws Exception {
+        String body = """
+            {
+              "refreshToken": "token-invalido"
+            }
+            """;
+
+        mockMvc.perform(post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.detail").value("Invalid refresh token"));
+    }
+
+    @Test
+    void deveRetornar422QuandoRefreshRecebeTokenExpiradoNoCookie() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com", "senha123");
+        RefreshToken expirado = RefreshToken.builder()
+            .token("refresh-expirado")
+            .usuario(usuario)
+            .expiresAt(java.time.Instant.now().minusSeconds(60))
+            .build();
+        refreshTokenRepository.save(expirado);
+
+        mockMvc.perform(post("/auth/refresh")
+                .cookie(new Cookie("refreshToken", expirado.getToken())))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.detail").value("Token expired, please login again"));
+    }
+
+    @Test
+    void devePriorizarRefreshTokenEnviadoNoBody() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com", "senha123");
+        RefreshToken tokenNoBody = refreshTokenRepository.save(tokenService.generateRefreshToken(usuario));
+        RefreshToken tokenNoCookie = refreshTokenRepository.save(tokenService.generateRefreshToken(usuario));
+
+        String body = """
+            {
+              "refreshToken": "%s"
+            }
+            """.formatted(tokenNoBody.getToken());
+
+        MvcResult result = mockMvc.perform(post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .cookie(new Cookie("refreshToken", tokenNoCookie.getToken())))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        String novoToken = extractCookieValue(refreshTokenCookie(result));
+
+        assertFalse(refreshTokenRepository.findByToken(tokenNoBody.getToken()).isPresent());
+        assertTrue(refreshTokenRepository.findByToken(tokenNoCookie.getToken()).isPresent());
+        assertTrue(refreshTokenRepository.findByToken(novoToken).isPresent());
+    }
+
+    @Test
     void deveFazerLogoutELimparCookieNoMesmoPathPublicado() throws Exception {
         Usuario usuario = salvarUsuario("Maria", "maria@teste.com", "senha123");
         RefreshToken refreshToken = refreshTokenRepository.save(tokenService.generateRefreshToken(usuario));
@@ -161,6 +230,18 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
         assertTrue(setCookie.contains("HttpOnly"));
         assertTrue(setCookie.contains("SameSite=None"));
         assertEquals(0, refreshTokenRepository.count());
+    }
+
+    @Test
+    void devePermitirLogoutSemAutenticacaoNemCookie() throws Exception {
+        MvcResult result = mockMvc.perform(delete("/auth/logout"))
+            .andExpect(status().isNoContent())
+            .andReturn();
+
+        String setCookie = refreshTokenCookie(result);
+
+        assertTrue(setCookie.contains("Path=/api/auth"));
+        assertTrue(setCookie.contains("Max-Age=0"));
     }
 
     private Usuario salvarUsuario(String nome, String email, String senha) {
