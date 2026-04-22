@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -134,6 +135,42 @@ class CategoriaControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveListarCategoriasSemFiltroComEstruturaDePaginacao() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+
+        salvarCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA, false);
+        salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
+
+        mockMvc.perform(get("/categorias")
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .param("page", "0")
+                .param("size", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content", hasSize(1)))
+            .andExpect(jsonPath("$.size").value(1))
+            .andExpect(jsonPath("$.number").value(0))
+            .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void deveRedirecionarParaLoginGoogleQuandoListarCategoriasSemAutenticacao() throws Exception {
+        mockMvc.perform(get("/categorias"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(header().string(HttpHeaders.LOCATION, containsString("/oauth2/authorization/google")));
+    }
+
+    @Test
+    void deveRedirecionarParaLoginGoogleQuandoCriarCategoriaSemAutenticacao() throws Exception {
+        CategoriaRequest request = new CategoriaRequest("Mercado", TipoMovimentacao.DESPESA);
+
+        mockMvc.perform(post("/categorias")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(header().string(HttpHeaders.LOCATION, containsString("/oauth2/authorization/google")));
+    }
+
+    @Test
     void deveEditarCategoriaDoProprioUsuario() throws Exception {
         Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
         Categoria categoria = salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
@@ -146,6 +183,81 @@ class CategoriaControllerIntegrationTest extends IntegrationTestBase {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nome").value("Alimentacao"))
             .andExpect(jsonPath("$.tipo").value("DESPESA"));
+    }
+
+    @Test
+    void deveNormalizarEspacosAoCriarCategoria() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        CategoriaRequest request = new CategoriaRequest("  Mercado  ", TipoMovimentacao.DESPESA);
+
+        mockMvc.perform(post("/categorias")
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.nome").value("Mercado"));
+    }
+
+    @Test
+    void deveRetornar422QuandoCriarCategoriaDuplicadaAposNormalizacaoDeEspacos() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
+        CategoriaRequest request = new CategoriaRequest("  Mercado  ", TipoMovimentacao.DESPESA);
+
+        mockMvc.perform(post("/categorias")
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.detail").value("Já existe categoria com este nome para esse tipo"));
+    }
+
+    @Test
+    void deveNormalizarEspacosAoEditarCategoria() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        Categoria categoria = salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
+        CategoriaRequest request = new CategoriaRequest("  Alimentacao  ", TipoMovimentacao.DESPESA);
+
+        mockMvc.perform(put("/categorias/{id}", categoria.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.nome").value("Alimentacao"));
+    }
+
+    @Test
+    void deveRetornar400QuandoEditarCategoriaComRequestInvalida() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        Categoria categoria = salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
+        String request = """
+            {
+              "nome": "   ",
+              "tipo": null
+            }
+            """;
+
+        mockMvc.perform(put("/categorias/{id}", categoria.getId())
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(request))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.title").value("Dados inválidos"))
+            .andExpect(jsonPath("$.erros", hasSize(2)));
+    }
+
+    @Test
+    void deveRedirecionarParaLoginGoogleQuandoEditarCategoriaSemAutenticacao() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        Categoria categoria = salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
+        CategoriaRequest request = new CategoriaRequest("Alimentacao", TipoMovimentacao.DESPESA);
+
+        mockMvc.perform(put("/categorias/{id}", categoria.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(header().string(HttpHeaders.LOCATION, containsString("/oauth2/authorization/google")));
     }
 
     @Test
@@ -200,6 +312,16 @@ class CategoriaControllerIntegrationTest extends IntegrationTestBase {
             .andExpect(jsonPath("$.detail").value("Categoria não encontrada"));
 
         assertTrue(categoriaRepository.findById(categoria.getId()).isPresent());
+    }
+
+    @Test
+    void deveRedirecionarParaLoginGoogleQuandoExcluirCategoriaSemAutenticacao() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        Categoria categoria = salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
+
+        mockMvc.perform(delete("/categorias/{id}", categoria.getId()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(header().string(HttpHeaders.LOCATION, containsString("/oauth2/authorization/google")));
     }
 
     private Usuario salvarUsuario(String nome, String email) {
