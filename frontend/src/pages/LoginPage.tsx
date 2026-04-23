@@ -8,6 +8,7 @@ import Button from "../components/ui/Button";
 import AppIcon from "../components/ui/AppIcon";
 import { ROUTE_PATHS } from "../lib/constants";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -26,11 +27,15 @@ function LoginPage() {
   const navigate = useNavigate();
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const location = useLocation();
+  const isAnyLoading = loadingEmail || loadingGoogle;
+
   
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
+
   
   const onSubmit = async (data: LoginForm) => {
     setLoadingEmail(true);
@@ -40,7 +45,8 @@ function LoginPage() {
 
       localStorage.setItem("acessToken", acessToken);
       
-      navigate(ROUTE_PATHS.dashboard);
+      const from = (location.state as any)?.from || ROUTE_PATHS.dashboard;
+      navigate(from, { replace: true });
     } catch (error: any) {
       console.error("Erro ao fazer login:", error.response || error);
       alert("Falha no login. Verifique suas credenciais.");
@@ -51,16 +57,16 @@ function LoginPage() {
 
   const handleLoginWithGoogle = () => {
     setLoadingGoogle(true);
-    const googleURL = import.meta.env.VITE_API_URL;
-
-    if (!googleURL) {
-      alert("URL da API não configurada");
+    try {
+      const googleURL = import.meta.env.VITE_API_URL;
+      if (!googleURL) throw new Error("URL da API não configurada");
+    
+      const urlFinal = `${googleURL.replace(/\/$/, "")}/oauth2/authorization/google`;
+      window.location.href = urlFinal;
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Erro ao redirecionar para o Google");
       setLoadingGoogle(false);
-      return;
     }
-
-    const urlFinal = `${googleURL.replace(/\/$/, "")}/oauth2/authorization/google`;
-    window.location.href = urlFinal;
   };
 
   return (
@@ -141,7 +147,7 @@ function LoginPage() {
                 className="font-headline text-base font-bold" 
                 fullWidth
                 type="submit"
-                disabled={loadingGoogle}
+                disabled={isAnyLoading}
                 isLoading={loadingEmail}
                 >
                 Entrar
@@ -163,7 +169,7 @@ function LoginPage() {
           onClick={handleLoginWithGoogle}
           fullWidth
           type="button"
-          disabled={loadingEmail}
+          disabled={isAnyLoading}
           isLoading={loadingGoogle}
           className="font-headline text-base font-bold mt-4 flex gap-3"
           >

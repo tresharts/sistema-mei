@@ -11,25 +11,22 @@ const PrivateRoute = () => {
     let mounted = true;
 
     const verifySession = async () => {
-      const token = localStorage.getItem('acessToken');
-      if (token) {
-        if (mounted) {
+      try {
+        const token = localStorage.getItem('acessToken');
+        if (token) {
           setIsAuthenticated(true);
-          setIsChecking(false);
+        } else {
+          const refreshedToken = await refreshSession();
+          setIsAuthenticated(Boolean(refreshedToken));
         }
-        return;
+      } catch {
+        setIsAuthenticated(false); 
+      } finally {
+        if (mounted) setIsChecking(false);
       }
-
-      const refreshedToken = await refreshSession();
-      if (!mounted) {
-        return;
-      }
-
-      setIsAuthenticated(Boolean(refreshedToken));
-      setIsChecking(false);
     };
 
-    verifySession();
+  verifySession();
 
     return () => {
       mounted = false;
@@ -37,10 +34,10 @@ const PrivateRoute = () => {
   }, []);
 
   if (isChecking) {
-    return null;
+    return <div>Verificando sessão...</div>;
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to={ROUTE_PATHS.login} replace />;
+  return isAuthenticated ? <Outlet /> : <Navigate to={ROUTE_PATHS.login} state={{from: location.pathname}} replace />;
 };
 
 export default PrivateRoute;
