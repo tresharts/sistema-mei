@@ -11,7 +11,6 @@ function NewTransactionPage() {
     "income",
   );
   const [scope, setScope] = useState<"business" | "personal">("business");
-
   return (
     <div className="space-y-10">
       <div className="flex rounded-xl bg-surface-container-high p-1.5">

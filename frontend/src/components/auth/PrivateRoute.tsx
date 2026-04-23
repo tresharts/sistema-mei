@@ -14,14 +14,17 @@ const PrivateRoute = () => {
     const verifySession = async () => {
       try {
         const token = localStorage.getItem('acessToken');
-        if (token) {
-          setIsAuthenticated(true);
+        
+        if (token && token !== "undefined" && token !== "null") {
+          if (mounted) setIsAuthenticated(true);
         } else {
           const refreshedToken = await refreshSession();
-          setIsAuthenticated(Boolean(refreshedToken));
+          if (mounted) {
+            setIsAuthenticated(Boolean(!!refreshedToken && typeof refreshedToken === "string"));
+          }
         }
       } catch {
-        setIsAuthenticated(false); 
+        if (mounted) setIsAuthenticated(false);
       } finally {
         if (mounted) setIsChecking(false);
       }

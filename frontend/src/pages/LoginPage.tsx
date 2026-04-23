@@ -70,7 +70,7 @@ function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background px-4 py-8">
+    <main className="min-h-screen overflow-hidden bg-background px-4 py-8 bg-background">
       <div className="pointer-events-none fixed left-[-4rem] top-24 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none fixed bottom-[-3rem] right-[-2rem] h-48 w-48 rounded-full bg-tertiary-container/15 blur-3xl" />
 

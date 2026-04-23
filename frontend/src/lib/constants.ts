@@ -1,7 +1,7 @@
 import type { NavItem } from "../types/navigation";
 
 export const ROUTE_PATHS = {
-  dashboard: "/",
+  dashboard: "/dashboard",
   login: "/login",
   esqueciSenha: "/redefinir-senha",
   cadastro: "/cadastro",
