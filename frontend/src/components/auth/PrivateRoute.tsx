@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { refreshSession } from '../../lib/api';
 import { ROUTE_PATHS } from '../../lib/constants';
 
 const PrivateRoute = () => {
+  const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -26,7 +27,7 @@ const PrivateRoute = () => {
       }
     };
 
-  verifySession();
+    verifySession();
 
     return () => {
       mounted = false;
