@@ -135,3 +135,25 @@ Alias aceito:
 - Frontend: `http://localhost:5173` (padrao do Vite) ou outra porta local
 - Backend: `http://localhost:8080`
 - H2 Console (quando habilitado): `http://localhost:8080/h2-console`
+
+## Deploy do frontend na Vercel
+
+Como o frontend usa React Router com `BrowserRouter`, o projeto inclui `frontend/vercel.json` para reescrever qualquer rota para `index.html`.
+
+Na Vercel, configure:
+
+- `Root Directory`: `frontend`
+- `Build Command`: `pnpm build`
+- `Output Directory`: `dist`
+- `Install Command`: `pnpm install`
+
+Variavel de ambiente obrigatoria:
+
+```env
+VITE_API_URL=https://SEU-BACKEND.onrender.com
+```
+
+Ajustes necessarios no backend publicado:
+
+- defina `FRONTEND_URL` com a URL final da Vercel, por exemplo `https://seu-projeto.vercel.app`
+- se usar login com Google, adicione essa mesma URL nas configuracoes de redirect/origem autorizada do provedor

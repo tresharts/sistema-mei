@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -39,6 +40,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(req -> {
                 req.requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll();
+                req.requestMatchers(HttpMethod.GET, "/health")
+                    .permitAll();
                 req.requestMatchers(HttpMethod.POST, "/auth/register")
                     .permitAll();
                 req.requestMatchers(HttpMethod.POST, "/auth/login")
@@ -50,17 +53,22 @@ public class SecurityConfig {
                 req.anyRequest().authenticated();
             })
             .oauth2Login(oauth2 -> oauth2
-                .successHandler((request, response, authentication) -> {
-                    OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-
-                    String email = oAuth2User.getAttribute("email");
-                    String nome = oAuth2User.getAttribute("name");
-
-                    AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
-                    authCookieService.addRefreshTokenCookie(response, returnTokens.refreshToken());
-                    response.sendRedirect(frontendUrl + "/google-callback");
-                }))
+                .successHandler(googleOAuthSuccessHandler()))
             .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler googleOAuthSuccessHandler() {
+        return (request, response, authentication) -> {
+            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+
+            String email = oAuth2User.getAttribute("email");
+            String nome = oAuth2User.getAttribute("name");
+
+            AuthResponse returnTokens = authService.loginWithGoogle(email, nome);
+            authCookieService.addRefreshTokenCookie(response, returnTokens.refreshToken());
+            response.sendRedirect(frontendUrl + "/google-callback");
+        };
     }
 }

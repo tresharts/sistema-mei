@@ -1,5 +1,6 @@
 package com.api.SistemaMEI.auth;
 
+import com.api.SistemaMEI.categoria.CategoriaService;
 import com.api.SistemaMEI.exception.BusinessRuleException;
 import com.api.SistemaMEI.usuario.Usuario;
 import com.api.SistemaMEI.usuario.UsuarioRepository;
@@ -19,6 +20,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final CategoriaService categoriaService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -33,17 +35,18 @@ public class AuthService {
             .senha(passwordEncoder.encode(request.senha()))
             .build();
 
-        userRepository.save(usuario);
+        Usuario usuarioSalvo = userRepository.save(usuario);
+        categoriaService.criarCategoriasPadrao(usuarioSalvo);
 
-        String acessToken = tokenService.generateAcessToken(usuario);
-        RefreshToken refreshToken = tokenService.generateRefreshToken(usuario);
+        String acessToken = tokenService.generateAcessToken(usuarioSalvo);
+        RefreshToken refreshToken = tokenService.generateRefreshToken(usuarioSalvo);
         refreshTokenRepository.save(refreshToken);
 
         return new AuthResponse(
             acessToken,
             refreshToken.getToken(),
-            usuario.getNome(),
-            usuario.getEmail()
+            usuarioSalvo.getNome(),
+            usuarioSalvo.getEmail()
         );
     }
 
@@ -79,7 +82,9 @@ public class AuthService {
                     .senha(passwordEncoder.encode(UUID.randomUUID().toString()))
                     .build();
 
-                return userRepository.save(novoUsuario);
+                Usuario usuarioSalvo = userRepository.save(novoUsuario);
+                categoriaService.criarCategoriasPadrao(usuarioSalvo);
+                return usuarioSalvo;
             });
 
 
