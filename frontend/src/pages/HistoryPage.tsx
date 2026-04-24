@@ -2,7 +2,6 @@ import AppIcon from "../components/ui/AppIcon";
 import { historyGroups } from "../data/mockData";
 import { cn } from "../lib/cn";
 import { formatCurrencyBRL, getSignedAmount } from "../lib/format";
-
 function HistoryPage() {
   return (
     <div className="space-y-10">
