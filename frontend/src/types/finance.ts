@@ -9,7 +9,7 @@ export type apiTransactionScope = "EMPRESARIAL" | "PESSOAL";
 export type apiTransactionStatus = "PAGA" | "A_PAGAR" | "RECEBIDO"  | "A_RECEBER" | "VENCIDO";
 
 
-//Dados do backend 
+//Dados do backend
 export interface apiTransaction {
   id: string;
   descricao: string;
@@ -27,17 +27,17 @@ export interface TransactionItem{
   id: string;
   title: string; // vem de descricao
   amount: number; // vem de valor
-  kind: TransactionKind; // vem de tipo
-  scope: TransactionScope; // vem de classificacao
-  status: TransactionStatus; // vem de status
-  statusLabel: string; // label amigável para status
-  scopeLabel: string; // label amigável para scope
-  category: string; // vem de categoria
+  kind: TransactionKind; 
+  scope: TransactionScope;
+  status: TransactionStatus
+  statusLabel: string; 
+  scopeLabel: string; 
+  category: string; 
 
   date: string; 
   dueDate?: string | null; 
 
-  partner?: string; // 
+  partner?: string; 
   timeLabel?: string;
   icon: IconName;
 
