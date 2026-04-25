@@ -75,18 +75,18 @@ function DashboardPage() {
       </section>
 
       <section className="space-y-4 rounded-2xl bg-surface-container-low p-6">
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-4 ">
           <h3 className="font-headline text-lg font-bold text-on-surface">
             Entradas vs Saidas
           </h3>
           <span className="text-xs text-on-surface-variant">Ultimos 7 dias</span>
         </div>
 
-        <div className="flex h-32 items-end justify-between gap-2 px-2">
+        <div className="flex h-auto items-end justify-between gap-2 px-2 ">
           {weeklyFlowChart.map((bar) => (
-            <div key={bar.label} className="flex flex-1 flex-col items-center gap-1">
+            <div key={bar.label} className="flex flex-1 flex-col items-center gap-1 ">
               <div
-                className="w-full rounded-t-sm bg-secondary/20"
+                className="w-full rounded-t-sm bg-secondary/20 "
                 style={{ height: `${bar.expenseHeight}px` }}
               />
               <div
@@ -100,7 +100,7 @@ function DashboardPage() {
 
         <div className="flex justify-center gap-4 pt-2 text-[10px]">
           <div className="flex items-center gap-1">
-            <div className="h-2 w-2 rounded-full bg-secondary/20" />
+            <div className="h-2 w-2 rounded-full bg-primary-dim" />
             Saidas
           </div>
           <div className="flex items-center gap-1">

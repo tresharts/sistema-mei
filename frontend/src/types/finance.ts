@@ -1,10 +1,48 @@
 import type { IconName, SurfaceTone } from "./ui";
 
 export type TransactionKind = "income" | "expense";
-
 export type TransactionScope = "business" | "personal";
-
 export type TransactionStatus = "settled" | "pending" | "overdue";
+
+export type apiTransactionKind = "RECEITA" | "DESPESAS";
+export type apiTransactionScope = "EMPRESARIAL" | "PESSOAL";
+export type apiTransactionStatus = "PAGA" | "A_PAGAR" | "RECEBIDO"  | "A_RECEBER" | "VENCIDO";
+
+
+//Dados do backend
+export interface apiTransaction {
+  id: string;
+  descricao: string;
+  valor: number;
+  tipo: apiTransactionKind;
+  classificacao: apiTransactionScope;
+  status: apiTransactionStatus;
+  categoria: string;
+  dataMovimentacao: string;
+  dataVencimento: string | null;
+}
+
+// Dados que o frontend irá usar/ler **comentários para saber de onde vem cada campo**
+export interface TransactionItem{
+  id: string;
+  title: string; // vem de descricao
+  amount: number; // vem de valor
+  kind: TransactionKind; 
+  scope: TransactionScope;
+  status: TransactionStatus
+  statusLabel: string; 
+  scopeLabel: string; 
+  category: string; 
+
+  date: string; 
+  dueDate?: string | null; 
+
+  partner?: string; 
+  timeLabel?: string;
+  icon: IconName;
+
+
+}
 
 export interface DashboardHighlight {
   label: string;
@@ -26,21 +64,6 @@ export interface TransactionCategory {
   icon: IconName;
 }
 
-export interface TransactionItem {
-  id: string;
-  title: string;
-  amount: number;
-  kind: TransactionKind;
-  scope: TransactionScope;
-  scopeLabel: string;
-  category: string;
-  status: TransactionStatus;
-  statusLabel: string;
-  dueDate: string;
-  partner: string;
-  timeLabel: string;
-  icon: IconName;
-}
 
 export interface HistoryGroup {
   id: string;

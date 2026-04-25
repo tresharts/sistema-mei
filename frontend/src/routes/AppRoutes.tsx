@@ -14,6 +14,7 @@ import GoogleCallBack from "../pages/GoogleCallBack";
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to={ROUTE_PATHS.login} replace />} />
       <Route path={ROUTE_PATHS.login} element={<LoginPage />} />
       <Route path={ROUTE_PATHS.googleCallback} element={<GoogleCallBack />} />
       <Route path={ROUTE_PATHS.cadastro} element={<CadastroPage />} />
@@ -33,7 +34,7 @@ function AppRoutes() {
 
       <Route
         path="*"
-        element={<Navigate to={ROUTE_PATHS.dashboard} replace />}
+        element={<Navigate to={ROUTE_PATHS.login} replace />}
       />
     </Routes>
   );
