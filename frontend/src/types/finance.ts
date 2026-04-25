@@ -4,7 +4,7 @@ export type TransactionKind = "income" | "expense";
 export type TransactionScope = "business" | "personal";
 export type TransactionStatus = "settled" | "pending" | "overdue";
 
-export type apiTransactionKind = "RECEITA" | "DESPESAS";
+export type apiTransactionKind = "RECEITA" | "DESPESA";
 export type apiTransactionScope = "EMPRESARIAL" | "PESSOAL";
 export type apiTransactionStatus = "PAGA" | "A_PAGAR" | "RECEBIDO"  | "A_RECEBER" | "VENCIDO";
 
