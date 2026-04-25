@@ -81,7 +81,7 @@ start_backend() {
   fi
 
   echo "Subindo backend..."
-  nohup bash -lc "cd \"$ROOT_DIR/backend\" && AUTH_REFRESH_COOKIE_PATH=\"$BACKEND_AUTH_REFRESH_COOKIE_PATH\" ./dev.sh" >>"$BACKEND_LOG_FILE" 2>&1 &
+  nohup bash -lc "cd \"$ROOT_DIR/backend\" && MSYS_NO_PATHCONV=1 AUTH_REFRESH_COOKIE_PATH=\"$BACKEND_AUTH_REFRESH_COOKIE_PATH\" ./dev.sh" >>"$BACKEND_LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$BACKEND_PID_FILE"
 
@@ -112,7 +112,7 @@ start_frontend() {
   fi
 
   echo "Subindo frontend com '$run_cmd' (VITE_API_URL=$FRONTEND_DEV_API_URL)..."
-  nohup bash -lc "cd \"$ROOT_DIR/frontend\" && VITE_API_URL=\"$FRONTEND_DEV_API_URL\" $run_cmd" >>"$FRONTEND_LOG_FILE" 2>&1 &
+  nohup bash -lc "cd \"$ROOT_DIR/frontend\" && MSYS_NO_PATHCONV=1 VITE_API_URL=\"$FRONTEND_DEV_API_URL\" $run_cmd" >>"$FRONTEND_LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$FRONTEND_PID_FILE"
 
