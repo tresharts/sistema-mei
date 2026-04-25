@@ -13,6 +13,7 @@ BACKEND_LOG_FILE="$LOG_DIR/backend.log"
 FRONTEND_LOG_FILE="$LOG_DIR/frontend.log"
 FRONTEND_DEV_API_URL="${FRONTEND_DEV_API_URL:-/api}"
 BACKEND_AUTH_REFRESH_COOKIE_PATH="${BACKEND_AUTH_REFRESH_COOKIE_PATH:-/api/auth}"
+BACKEND_HEALTH_URL="${BACKEND_HEALTH_URL:-http://localhost:8080/health}"
 
 MODE="${1:-up}"
 
@@ -48,6 +49,24 @@ cleanup_stale_pid() {
   fi
 }
 
+wait_for_backend() {
+  local pid="$1"
+
+  for _ in {1..45}; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      return 1
+    fi
+
+    if curl -fsS "$BACKEND_HEALTH_URL" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  return 1
+}
+
 start_backend() {
   cleanup_stale_pid "$BACKEND_PID_FILE"
 
@@ -66,15 +85,15 @@ start_backend() {
   local pid=$!
   echo "$pid" >"$BACKEND_PID_FILE"
 
-  sleep 2
-  if ! kill -0 "$pid" 2>/dev/null; then
-    echo "Falha ao subir backend. Ultimas linhas de log:"
+  if ! wait_for_backend "$pid"; then
+    echo "Falha ao subir backend ou health nao respondeu em $BACKEND_HEALTH_URL."
+    echo "Ultimas linhas de log:"
     tail -n 30 "$BACKEND_LOG_FILE" || true
     rm -f "$BACKEND_PID_FILE"
     exit 1
   fi
 
-  echo "Backend iniciado (PID $pid)."
+  echo "Backend iniciado (PID $pid) e health OK."
 }
 
 start_frontend() {
@@ -147,6 +166,11 @@ print_status() {
 
   if is_pid_running "$BACKEND_PID_FILE"; then
     echo "Backend: rodando (PID $(cat "$BACKEND_PID_FILE")) em http://localhost:8080"
+    if curl -fsS "$BACKEND_HEALTH_URL" >/dev/null 2>&1; then
+      echo "Backend health: OK"
+    else
+      echo "Backend health: sem resposta em $BACKEND_HEALTH_URL"
+    fi
   else
     echo "Backend: parado"
   fi

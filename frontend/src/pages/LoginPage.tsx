@@ -58,8 +58,7 @@ function LoginPage() {
   const handleLoginWithGoogle = () => {
     setLoadingGoogle(true);
     try {
-      const googleURL = import.meta.env.VITE_API_URL;
-      if (!googleURL) throw new Error("URL da API não configurada");
+      const googleURL = import.meta.env.VITE_API_URL?.trim() || "/api";
     
       const urlFinal = `${googleURL.replace(/\/$/, "")}/oauth2/authorization/google`;
       window.location.href = urlFinal;
