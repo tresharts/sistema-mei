@@ -1,73 +1,42 @@
-import {api} from '../lib/api';
-import { formatShortDate } from '../lib/format';
-import type { 
-    apiTransaction,
-    TransactionKind,
-    TransactionItem,
-    TransactionScope,
-    TransactionStatus
-} from '../types/finance';
-import { IconName } from '../types/ui';
+import {api} from "../lib/api";
+import { TransactionFormData } from "../components/transactions/TransactionForm";
 
+// Backend
+const mapToBackend = (data: TransactionFormData) => {
+  return {
+    valor: parseFloat(data.amount),
+    descricao: data.description,
+    data: data.date,
+    dataVencimento: data.status === "pending" ? data.dueDate : null,
+    tipo: data.kind === "income" ? "RECEITA" : "DESPESA",
+    classificacao: data.scope === "business" ? "EMPRESARIAL" : "PESSOAL",
+    status: mapStatusToBackend(data.kind, data.status),
+    categoriaId: data.categoryId
+  };
+};
 
-export function mapTransactiontoFrontend(apiData: apiTransaction): TransactionItem {
-    const kind: TransactionKind = apiData.tipo === 'RECEITA' ? 'income' : 'expense';
+// Backend logic
+const mapStatusToBackend = (kind: "income" | "expense", status: "settled" | "pending") => {
+  if (kind === "income") {
+    return status === "settled" ? "RECEBIDO" : "A_RECEBER";
+  }
+  return status === "settled" ? "PAGO" : "A_PAGAR";
+};
 
-    const scope: TransactionScope = apiData.classificacao === 'EMPRESARIAL' ? 'business' : 'personal';
-    const scopeLabel = apiData.classificacao === 'EMPRESARIAL' ? 'Empresa' : 'Pessoal';
+export const transactionService = {
+  
+  async createTransaction(data: TransactionFormData) {
+    const payload = mapToBackend(data);
+    const response = await api.post("/movimentacoes", payload);
+    return response.data;
+  },
+    
+  async getAllTransactions(params?: any) {
+    const response = await api.get("/movimentacoes", { params });
+    return response.data.content || [];
+  },
 
-    let status: TransactionStatus = 'pending';
-    let statusLabel: string = 'Pendente';
-
-    switch (apiData.status) {
-        case 'PAGA':
-            status = 'settled'; statusLabel = 'Paga';
-            break;
-        case 'RECEBIDO':
-            status = 'settled'; statusLabel = 'Recebida';
-            break;
-        case 'A_PAGAR':
-            status = 'pending'; statusLabel = 'A Pagar';
-            break;
-        case 'A_RECEBER':
-            status = 'pending'; statusLabel = 'A Receber';
-            break;
-        case 'VENCIDO':
-            status = 'overdue'; statusLabel = 'Vencida';
-            break;
-    }
-
-    const icon: IconName = kind === 'income' ? 'arrow-up' : 'arrow-down';
-
-    return {
-        id: apiData.id,
-        title: apiData.descricao,
-        amount: apiData.valor,
-        kind,
-        scope,
-        scopeLabel,
-        category: apiData.categoria,
-        status,
-        statusLabel,
-        date: apiData.dataMovimentacao,
-        dueDate: apiData.dataVencimento,
-        timeLabel: formatShortDate(apiData.dataMovimentacao),
-        icon,
-    };
-}
-
-
-export const TransactionService = {
-    async getAllTransactions(): Promise<TransactionItem[]> {
-        const response = await api.get<apiTransaction[]>('/caminho da função de movimentacao no back');
-        return response.data.map(mapTransactiontoFrontend);
-    },
-
-    async createTransaction(dados: Partial<apiTransaction>): Promise<void> {
-        await api.post('/caminho da função de movimentação no back', dados);
-    },
-
-    async deleteTransaction(id: string): Promise<void> {
-        await api.delete(`/caminho da função de movimentacao no back/${id}`);
-    }
-}
+  async deleteTransaction(id: string) {
+    await api.delete(`/movimentacoes/${id}`);
+  }
+};
