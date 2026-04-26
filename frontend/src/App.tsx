@@ -1,9 +1,13 @@
 import AppRoutes from "./routes/AppRoutes";
-import { Toaster} from "sonner";
+import { Toaster } from "sonner";
 
 function App() {
-  <Toaster position="top-center" richColors /> 
-  return <AppRoutes />;
+  return (
+    <>
+      <AppRoutes />
+      <Toaster position="top-center" richColors />
+    </>
+  );
 }
 
 export default App;

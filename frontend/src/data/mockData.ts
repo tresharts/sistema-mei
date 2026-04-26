@@ -184,10 +184,10 @@ export const historyGroups: HistoryGroup[] = [
 ];
 
 export const transactionCategories: TransactionCategory[] = [
-  { id: "cat-1", name: "Material", icon: "box" },
-  { id: "cat-2", name: "Frete", icon: "briefcase" },
-  { id: "cat-3", name: "Embalagem", icon: "tag" },
-  { id: "cat-4", name: "Venda", icon: "sale" },
+  { id: "cat-1", name: "Material", tipo: "DESPESA", icon: "box" },
+  { id: "cat-2", name: "Frete", tipo: "DESPESA", icon: "briefcase" },
+  { id: "cat-3", name: "Embalagem", tipo: "DESPESA", icon: "tag" },
+  { id: "cat-4", name: "Venda", tipo: "RECEITA", icon: "sale" },
 ];
 
 export const settingsCategories: SettingsCategory[] = [

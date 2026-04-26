@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../ui/Button";
 import AppIcon from "../ui/AppIcon";
 import Input from "../ui/Input";
+import type { TransactionCategory } from "../../types/finance";
 
 export interface TransactionFormData {
   kind: "income" | "expense";
@@ -16,7 +17,7 @@ export interface TransactionFormData {
 
 interface TransactionFormProps {
   initialData?: Partial<TransactionFormData>;
-  categories: { id: string; name: string }[];
+  categories: TransactionCategory[];
   onSubmit: (data: TransactionFormData) => void;
   isLoading?: boolean;
 }
@@ -35,6 +36,26 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
 
   const settledLabel = kind === "income" ? "Já Recebido" : "Já Pago";
   const pendingLabel = kind === "income" ? "A Receber" : "A Pagar";
+  const selectedCategoryKind = kind === "income" ? "RECEITA" : "DESPESA";
+
+  const availableCategories = useMemo(
+    () => categories.filter((category) => category.tipo === selectedCategoryKind),
+    [categories, selectedCategoryKind]
+  );
+
+  useEffect(() => {
+    if (!categoryId) {
+      return;
+    }
+
+    const selectedCategoryStillAvailable = availableCategories.some(
+      (category) => category.id === categoryId
+    );
+
+    if (!selectedCategoryStillAvailable) {
+      setCategoryId("");
+    }
+  }, [availableCategories, categoryId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +162,7 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
                 onChange={(e) => setCategoryId(e.target.value)}
               >
                 <option value="" disabled>Selecione...</option>
-                {categories.map((category) => (
+                {availableCategories.map((category) => (
                   <option key={category.id} value={category.id}>{category.name}</option>
                 ))}
               </select>

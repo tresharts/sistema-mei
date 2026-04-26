@@ -4,29 +4,30 @@ export type TransactionKind = "income" | "expense";
 export type TransactionScope = "business" | "personal";
 export type TransactionStatus = "settled" | "pending" | "overdue";
 
-export type apiTransactionKind = "RECEITA" | "DESPESA";
-export type apiTransactionScope = "EMPRESARIAL" | "PESSOAL";
-export type apiTransactionStatus = "PAGA" | "A_PAGAR" | "RECEBIDO"  | "A_RECEBER" | "VENCIDO";
+export type ApiTransactionKind = "RECEITA" | "DESPESA";
+export type ApiTransactionScope = "EMPRESARIAL" | "PESSOAL";
+export type ApiTransactionStatus = "PAGO" | "A_PAGAR" | "RECEBIDO" | "A_RECEBER";
 
 
-//Dados do backend
-export interface apiTransaction {
+export interface ApiTransaction {
   id: string;
   descricao: string;
   valor: number;
-  tipo: apiTransactionKind;
-  classificacao: apiTransactionScope;
-  status: apiTransactionStatus;
-  categoria: string;
-  dataMovimentacao: string;
+  tipo: ApiTransactionKind;
+  classificacao: ApiTransactionScope;
+  status: ApiTransactionStatus;
+  categoriaId: string;
+  categoriaNome: string;
+  data: string;
   dataVencimento: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-// Dados que o frontend irá usar/ler **comentários para saber de onde vem cada campo**
-export interface TransactionItem{
+export interface TransactionItem {
   id: string;
-  title: string; // vem de descricao
-  amount: number; // vem de valor
+  title: string;
+  amount: number;
   kind: TransactionKind; 
   scope: TransactionScope;
   status: TransactionStatus
@@ -61,6 +62,7 @@ export interface ChartDatum {
 export interface TransactionCategory {
   id: string;
   name: string;
+  tipo: ApiTransactionKind;
   icon: IconName;
 }
 
