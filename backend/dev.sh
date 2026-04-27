@@ -26,7 +26,7 @@ run_maven() {
   if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
     if [ -f "./mvnw.cmd" ] && command -v cmd.exe >/dev/null 2>&1; then
       echo "Tentando Maven Wrapper do Windows..."
-      if cmd.exe //c mvnw.cmd "${mvn_args[@]}"; then
+      if MSYS_NO_PATHCONV=1 cmd.exe /c mvnw.cmd "${mvn_args[@]}"; then
         return 0
       fi
       echo "Maven Wrapper do Windows falhou."
