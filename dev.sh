@@ -81,6 +81,7 @@ start_backend() {
   fi
 
   echo "Subindo backend..."
+  : >"$BACKEND_LOG_FILE"
   nohup bash -lc "cd \"$ROOT_DIR/backend\" && MSYS_NO_PATHCONV=1 AUTH_REFRESH_COOKIE_PATH=\"$BACKEND_AUTH_REFRESH_COOKIE_PATH\" ./dev.sh" >>"$BACKEND_LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$BACKEND_PID_FILE"

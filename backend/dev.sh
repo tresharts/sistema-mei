@@ -20,16 +20,27 @@ run_maven() {
       return 0
     fi
 
-    echo "Maven Wrapper falhou. Tentando usar Maven instalado no sistema..."
+    echo "Maven Wrapper falhou."
+  fi
+
+  if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
+    if [ -f "./mvnw.cmd" ] && command -v cmd.exe >/dev/null 2>&1; then
+      echo "Tentando Maven Wrapper do Windows..."
+      if cmd.exe //c mvnw.cmd "${mvn_args[@]}"; then
+        return 0
+      fi
+      echo "Maven Wrapper do Windows falhou."
+    fi
   fi
 
   if command -v mvn >/dev/null 2>&1; then
+    echo "Tentando usar Maven instalado no sistema..."
     mvn "${mvn_args[@]}"
     return $?
   fi
 
   echo "Nao foi possivel executar Maven."
-  echo "Verifique o cache do Maven Wrapper em ~/.m2/wrapper/dists ou instale o comando 'mvn'."
+  echo "Verifique sua conexao com repo.maven.apache.org, limpe o cache em ~/.m2/wrapper/dists ou instale o comando 'mvn'."
   return 1
 }
 
