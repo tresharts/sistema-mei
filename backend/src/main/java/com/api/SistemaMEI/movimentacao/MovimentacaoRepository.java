@@ -8,7 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +38,70 @@ public interface MovimentacaoRepository extends JpaRepository<Movimentacao, UUID
         StatusMovimentacao status,
         ClassificacaoFinanceira classificacao,
         UUID categoriaId,
+        Pageable pageable
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(m.valor), 0)
+        FROM Movimentacao m
+        WHERE m.usuario = :usuario
+        AND m.tipo = :tipo
+        AND m.status = :status
+    """)
+    BigDecimal somaPorUsuarioTipoEStatus(
+        @Param("usuario") Usuario usuario,
+        @Param("tipo") TipoMovimentacao tipo,
+        @Param("status") StatusMovimentacao status
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(m.valor), 0)
+        FROM Movimentacao m
+        WHERE m.usuario = :usuario
+        AND m.tipo = :tipo
+        AND m.status = :status
+        AND m.data >= :dataInicio
+        AND m.data <= :dataFim
+    """)
+    BigDecimal somaPorUsuarioTipoStatusEPeriodo(
+        @Param("usuario") Usuario usuario,
+        @Param("tipo") TipoMovimentacao tipo,
+        @Param("status") StatusMovimentacao status,
+        @Param("dataInicio") LocalDate dataInicio,
+        @Param("dataFim") LocalDate dataFim
+    );
+
+    @Query("""
+        SELECT COALESCE(SUM(m.valor), 0)
+        FROM Movimentacao m
+        WHERE m.usuario = :usuario
+        AND m.tipo = :tipo
+        AND m.classificacao = :classificacao
+        AND m.status = :status
+        AND m.data >= :dataInicio
+        AND m.data <= :dataFim
+    """)
+    BigDecimal somaPorUsuarioTipoClassificacaoStatusEPeriodo(
+        @Param("usuario") Usuario usuario,
+        @Param("tipo") TipoMovimentacao tipo,
+        @Param("classificacao") ClassificacaoFinanceira classificacao,
+        @Param("status") StatusMovimentacao status,
+        @Param("dataInicio") LocalDate dataInicio,
+        @Param("dataFim") LocalDate dataFim
+    );
+
+    long countByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+        Usuario usuario,
+        TipoMovimentacao tipo,
+        StatusMovimentacao status,
+        LocalDate dataVencimento
+    );
+
+    Page<Movimentacao> findByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+        Usuario usuario,
+        TipoMovimentacao tipo,
+        StatusMovimentacao status,
+        LocalDate dataVencimento,
         Pageable pageable
     );
 }
