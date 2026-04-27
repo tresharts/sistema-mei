@@ -213,6 +213,14 @@ function AppIcon({ className, filled = false, name, ...props }: AppIconProps) {
           <path d="M12 12v9" />
         </svg>
       );
+    case "filter_list":
+      return (
+        <svg {...commonProps}>
+          <path d="M3 6h18" />
+          <path d="M7 12h10" />
+          <path d="M10 18h4" />
+        </svg>
+      );
     default:
       return null;
   }

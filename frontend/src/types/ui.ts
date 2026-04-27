@@ -1,4 +1,5 @@
 export type IconName =
+    "filter_list"
   | "grid"
   | "add-circle"
   | "history"
@@ -24,6 +25,7 @@ export type IconName =
   | "user"
   | "sale"
   | "box";
+
 
 export type SurfaceTone =
   | "primary"
