@@ -79,11 +79,25 @@ export const transactionService = {
   },
     
   async getAllTransactions(params?: Record<string, unknown>) {
-    const response = await api.get<{ content?: ApiTransaction[] }>("/movimentacoes", { params });
-    return (response.data.content ?? []).map(toTransactionItem);
+    const response = await api.get<{ 
+      content?: ApiTransaction[], 
+      totalPages: number }> ("/movimentacoes", { params });
+
+    return{
+      transactions: (response.data.content ?? []).map(toTransactionItem),
+      totalPages: response.data.totalPages,
+    };
   },
 
   async deleteTransaction(id: string) {
     await api.delete(`/movimentacoes/${id}`);
-  }
+  },
+
+  async updateStaus(id: string, status: ApiTransactionStatus){
+    const response = await api.patch<ApiTransaction>(`/movimentacao/${id}/{status`, {
+      status: status
+    });
+
+    return toTransactionItem(response.data);
+ }
 };
