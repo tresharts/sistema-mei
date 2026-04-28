@@ -9,6 +9,7 @@ import AppIcon from "../components/ui/AppIcon";
 import { ROUTE_PATHS } from "../lib/constants";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -30,13 +31,16 @@ function LoginPage() {
   const location = useLocation();
   const isAnyLoading = loadingEmail || loadingGoogle;
 
-  
-
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
-  
+  const getErrorMessage = (error : unknown): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    return "Falha na comunicação com o servidor.";
+  }
+
   const onSubmit = async (data: LoginForm) => {
     setLoadingEmail(true);
     try {
@@ -46,10 +50,13 @@ function LoginPage() {
       localStorage.setItem("acessToken", acessToken);
       
       const from = (location.state as any)?.from || ROUTE_PATHS.dashboard;
+
+      toast.success("Bem-vindo de volta!")
       navigate(from, { replace: true });
-    } catch (error: any) {
-      console.error("Erro ao fazer login:", error.response || error);
-      alert("Falha no login. Verifique suas credenciais.");
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      toast.error(`Erro ao fazer login:` + "senha ou email incorretos ");
+      console.error("Login error details:", error + message);
     } finally {
       setLoadingEmail(false);
     }
@@ -61,9 +68,11 @@ function LoginPage() {
       const googleURL = import.meta.env.VITE_API_URL?.trim() || "/api";
     
       const urlFinal = `${googleURL.replace(/\/$/, "")}/oauth2/authorization/google`;
+      toast.info("Redirecionando para o Google...");
       window.location.href = urlFinal;
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "Erro ao redirecionar para o Google");
+    } catch (error : unknown) {
+      const message = getErrorMessage(error);
+      toast.error(message);
       setLoadingGoogle(false);
     }
   };
@@ -73,7 +82,7 @@ function LoginPage() {
       <div className="pointer-events-none fixed left-[-4rem] top-24 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none fixed bottom-[-3rem] right-[-2rem] h-48 w-48 rounded-full bg-tertiary-container/15 blur-3xl" />
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col justify-between">
+      <div className="relative mx-auto flex w-full max-w-md flex-col justify-between">
         <section className="space-y-6 pt-6">
           <span className="inline-flex rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
             Sistema MEI
@@ -81,7 +90,7 @@ function LoginPage() {
 
           <div className="space-y-3">
             <h1 className="max-w-[20ch] font-headline text-4xl font-extrabold leading-tight tracking-tight text-on-surface">
-              Controle financeiro simples para o seu atelie.
+              Controle financeiro simples para o seu MEI.
             </h1>
           </div>
 

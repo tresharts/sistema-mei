@@ -8,6 +8,7 @@ import { ROUTE_PATHS } from "../lib/constants";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import AppIcon from "../components/ui/AppIcon";
+import { toast } from "sonner";
 
 const registerSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -32,7 +33,12 @@ function CadastroPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  // 2. Chamada para o seu Backend Spring Boot
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    return "Falha ao processar cadastro.";
+  };
+
   const onSubmit = async (data: RegisterForm) => {
     try {
       const payload = {
@@ -43,12 +49,12 @@ function CadastroPage() {
       
       await api.post("/auth/register", payload);
 
-      alert("Conta criada com sucesso!");
+      toast.success("Conta criada com sucesso! Faça login para continuar.");
       navigate(ROUTE_PATHS.login);
-    } catch (error: any) {
-        console.error("Erro ao cadastrar:", error.response || error);
-        const message = error.response?.data?.message || "Erro ao cadastrar. Verifique os dados.";
-        alert(message);
+    } catch (error: unknown) {
+        const message = getErrorMessage(error);
+      toast.error(`Erro no cadastro: ${message}`);
+      console.error("Registration error:", error);
     }
   };
 
