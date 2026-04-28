@@ -197,7 +197,7 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
               type="button"
             >
               <span className="text-sm font-semibold">{pendingLabel}</span>
-            </button>
+            </button> 
           </div>
 
           

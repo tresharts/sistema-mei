@@ -31,7 +31,7 @@ function Card({
             ) : null}
           </div>
 
-          {action ? <div className="shrink-0">{action}</div> : null}
+          {action ? <div className="shrink-0 ">{action}</div> : null}
         </div>
       ) : null}
 

@@ -1,5 +1,6 @@
 import { api } from "../lib/api";
 import { TransactionFormData } from "../components/transactions/TransactionForm";
+import type { TransactionFiltersData } from "../components/transactions/TransactionFilters";
 import type {
   ApiTransaction,
   ApiTransactionStatus,
@@ -78,10 +79,11 @@ export const transactionService = {
     return response.data;
   },
     
-  async getAllTransactions(params?: Record<string, unknown>) {
+  async getAllTransactions(params?: TransactionFiltersData) {
     const response = await api.get<{ 
       content?: ApiTransaction[], 
-      totalPages: number }> ("/movimentacoes", { params });
+      totalPages: number 
+      }> ("/movimentacoes", { params });
 
     return{
       transactions: (response.data.content ?? []).map(toTransactionItem),
@@ -93,8 +95,8 @@ export const transactionService = {
     await api.delete(`/movimentacoes/${id}`);
   },
 
-  async updateStaus(id: string, status: ApiTransactionStatus){
-    const response = await api.patch<ApiTransaction>(`/movimentacao/${id}/status`, { status});
+  async updateStatus(id: string, status: ApiTransactionStatus){
+    const response = await api.patch<ApiTransaction>(`/movimentacoes/${id}/status`, { status});
 
     return toTransactionItem(response.data);
  }

@@ -52,10 +52,10 @@ export default function TransactionFilters({ onFilterChange, categories }: Trans
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-xs font-medium px-1">Período (Início / Fim)</label>
-          <div className="flex gap-2">
+      <div className="grid grid-cols-1 gap-4 ">
+        <div className="space-y-2 ">
+          <label className="text-xs font-medium px-1">Período (Início/Fim)</label>
+          <div className="flex">
             <Input
               type="date"
               className="min-h-0 py-2 text-xs"
@@ -72,7 +72,7 @@ export default function TransactionFilters({ onFilterChange, categories }: Trans
         </div>
 
         
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 ">
           <div className="space-y-2">
             <label className="text-xs font-medium px-1">Tipo</label>
             <select
