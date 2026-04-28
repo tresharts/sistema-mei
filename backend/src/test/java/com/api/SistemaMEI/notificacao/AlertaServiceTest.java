@@ -1,6 +1,5 @@
 package com.api.SistemaMEI.notificacao;
 
-import com.api.SistemaMEI.dashboard.AlertaResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -15,7 +14,7 @@ class AlertaServiceTest {
 
     @Test
     void naoDeveCriarAlertaDeContaAtrasadaQuandoQuantidadeForZero() {
-        List<AlertaResponse> alertas = service.listarAlertasDashboard(
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 10),
             0
         );
@@ -25,7 +24,7 @@ class AlertaServiceTest {
 
     @Test
     void deveCriarAlertaDeContaAtrasadaQuandoQuantidadeForMaiorQueZero() {
-        List<AlertaResponse> alertas = service.listarAlertasDashboard(
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 10),
             2
         );
@@ -39,7 +38,7 @@ class AlertaServiceTest {
 
     @Test
     void deveCriarAlertaDeDasTresDiasAntesDoVencimento() {
-        List<AlertaResponse> alertas = service.listarAlertasDashboard(
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 17),
             0
         );
@@ -53,7 +52,7 @@ class AlertaServiceTest {
 
     @Test
     void deveCriarAlertaDeDasNoDiaDoVencimento() {
-        List<AlertaResponse> alertas = service.listarAlertasDashboard(
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 20),
             0
         );
@@ -66,7 +65,7 @@ class AlertaServiceTest {
 
     @Test
     void naoDeveCriarAlertaDeDasAntesDaJanelaDeTresDias() {
-        List<AlertaResponse> alertas = service.listarAlertasDashboard(
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 16),
             0
         );
@@ -76,7 +75,7 @@ class AlertaServiceTest {
 
     @Test
     void deveConsiderarVencimentoDoMesSeguinteQuandoDiaVinteJaPassou() {
-        List<AlertaResponse> alertas = service.listarAlertasDashboard(
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 21),
             0
         );

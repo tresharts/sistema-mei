@@ -1,6 +1,4 @@
 package com.api.SistemaMEI.notificacao;
-
-import com.api.SistemaMEI.dashboard.AlertaResponse;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -28,7 +26,7 @@ public class AlertaService {
      * de contas atrasadas. Por isso recebemos esse valor por parametro e evitamos
      * fazer outra consulta no banco so para montar a mensagem.
      */
-    public List<AlertaResponse> listarAlertasDashboard(
+    public List<AlertaResponse> listarAlertasAtivos(
         LocalDate hoje,
         long quantidadeContasAReceberAtrasadas
     ) {

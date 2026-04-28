@@ -6,6 +6,7 @@ import com.api.SistemaMEI.financeiro.StatusMovimentacao;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.movimentacao.Movimentacao;
 import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
+import com.api.SistemaMEI.notificacao.AlertaResponse;
 import com.api.SistemaMEI.notificacao.AlertaService;
 import com.api.SistemaMEI.notificacao.SeveridadeAlerta;
 import com.api.SistemaMEI.notificacao.TipoAlerta;
@@ -98,7 +99,7 @@ class DashboardServiceTest {
             StatusMovimentacao.A_RECEBER,
             hoje
         )).thenReturn(2L);
-        when(alertaService.listarAlertasDashboard(hoje, 2L))
+        when(alertaService.listarAlertasAtivos(hoje, 2L))
             .thenReturn(List.of(new AlertaResponse(
                 TipoAlerta.CONTAS_A_RECEBER_ATRASADAS.name(),
                 "Voce tem 2 contas atrasadas",

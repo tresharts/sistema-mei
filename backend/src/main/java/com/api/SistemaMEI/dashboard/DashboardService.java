@@ -69,7 +69,7 @@ public class DashboardService {
             totalAPagar,
             vendasHoje,
             quantidadeContasAReceberAtrasadas,
-            alertaService.listarAlertasDashboard(hoje, quantidadeContasAReceberAtrasadas)
+            alertaService.listarAlertasAtivos(hoje, quantidadeContasAReceberAtrasadas)
         );
     }
 

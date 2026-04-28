@@ -1,4 +1,4 @@
-package com.api.SistemaMEI.dashboard;
+package com.api.SistemaMEI.notificacao;
 
 import java.time.LocalDate;
 
