@@ -94,9 +94,7 @@ export const transactionService = {
   },
 
   async updateStaus(id: string, status: ApiTransactionStatus){
-    const response = await api.patch<ApiTransaction>(`/movimentacao/${id}/{status`, {
-      status: status
-    });
+    const response = await api.patch<ApiTransaction>(`/movimentacao/${id}/status`, { status});
 
     return toTransactionItem(response.data);
  }
