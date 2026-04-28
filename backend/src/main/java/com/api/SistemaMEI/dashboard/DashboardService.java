@@ -5,6 +5,7 @@ import com.api.SistemaMEI.financeiro.StatusMovimentacao;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.movimentacao.Movimentacao;
 import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
+import com.api.SistemaMEI.notificacao.AlertaService;
 import com.api.SistemaMEI.usuario.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,13 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
 
     private final MovimentacaoRepository movimentacaoRepository;
+    private final AlertaService alertaService;
 
     @Transactional(readOnly = true)
     public ResumoResponse buscarResumo(Usuario usuario) {
@@ -68,7 +69,7 @@ public class DashboardService {
             totalAPagar,
             vendasHoje,
             quantidadeContasAReceberAtrasadas,
-            List.of()
+            alertaService.listarAlertasDashboard(hoje, quantidadeContasAReceberAtrasadas)
         );
     }
 

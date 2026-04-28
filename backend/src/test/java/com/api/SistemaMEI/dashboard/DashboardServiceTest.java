@@ -6,6 +6,9 @@ import com.api.SistemaMEI.financeiro.StatusMovimentacao;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.movimentacao.Movimentacao;
 import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
+import com.api.SistemaMEI.notificacao.AlertaService;
+import com.api.SistemaMEI.notificacao.SeveridadeAlerta;
+import com.api.SistemaMEI.notificacao.TipoAlerta;
 import com.api.SistemaMEI.usuario.Usuario;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +34,9 @@ class DashboardServiceTest {
 
     @Mock
     private MovimentacaoRepository movimentacaoRepository;
+
+    @Mock
+    private AlertaService alertaService;
 
     @InjectMocks
     private DashboardService service;
@@ -92,6 +98,15 @@ class DashboardServiceTest {
             StatusMovimentacao.A_RECEBER,
             hoje
         )).thenReturn(2L);
+        when(alertaService.listarAlertasDashboard(hoje, 2L))
+            .thenReturn(List.of(new AlertaResponse(
+                TipoAlerta.CONTAS_A_RECEBER_ATRASADAS.name(),
+                "Voce tem 2 contas atrasadas",
+                "Confira os valores que ainda nao foram recebidos.",
+                2L,
+                SeveridadeAlerta.DANGER.name(),
+                null
+            )));
 
         ResumoResponse response = service.buscarResumo(usuario);
 
@@ -101,7 +116,11 @@ class DashboardServiceTest {
         assertEquals(BigDecimal.valueOf(120), response.totalAPagar());
         assertEquals(BigDecimal.valueOf(180), response.vendasHoje());
         assertEquals(2, response.quantidadeContasAReceberAtrasadas());
-        assertTrue(response.alertas().isEmpty());
+        assertEquals(1, response.alertas().size());
+        assertEquals(
+            TipoAlerta.CONTAS_A_RECEBER_ATRASADAS.name(),
+            response.alertas().getFirst().tipo()
+        );
     }
 
     @Test

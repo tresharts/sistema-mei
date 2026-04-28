@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -132,7 +133,10 @@ class DashboardControllerIntegrationTest extends IntegrationTestBase {
             .andExpect(jsonPath("$.totalAPagar").value(120.0))
             .andExpect(jsonPath("$.vendasHoje").value(1000.0))
             .andExpect(jsonPath("$.quantidadeContasAReceberAtrasadas").value(1))
-            .andExpect(jsonPath("$.alertas", hasSize(0)));
+            .andExpect(jsonPath("$.alertas.length()").value(greaterThanOrEqualTo(1)))
+            .andExpect(jsonPath("$.alertas[0].tipo").value("CONTAS_A_RECEBER_ATRASADAS"))
+            .andExpect(jsonPath("$.alertas[0].quantidade").value(1))
+            .andExpect(jsonPath("$.alertas[0].severidade").value("DANGER"));
     }
 
     @Test
