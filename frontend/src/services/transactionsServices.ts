@@ -10,6 +10,12 @@ import type {
   TransactionStatus,
 } from "../types/finance";
 
+type TransactionListParams = TransactionFiltersData & {
+  page?: number;
+  size?: number;
+  sort?: string;
+};
+
 const mapToBackend = (data: TransactionFormData) => {
   return {
     valor: parseFloat(data.amount),
@@ -79,7 +85,7 @@ export const transactionService = {
     return response.data;
   },
     
-  async getAllTransactions(params?: TransactionFiltersData) {
+  async getAllTransactions(params?: TransactionListParams) {
     const response = await api.get<{ 
       content?: ApiTransaction[], 
       totalPages: number 

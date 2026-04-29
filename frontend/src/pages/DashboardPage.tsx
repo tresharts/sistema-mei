@@ -1,130 +1,211 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AppIcon from "../components/ui/AppIcon";
-import {
-  dashboardHighlights,
-  recentTransactions,
-  weeklyFlowChart,
-} from "../data/mockData";
 import { ROUTE_PATHS } from "../lib/constants";
-import { formatCurrencyBRL, getSignedAmount } from "../lib/format";
+import { formatCurrencyBRL, formatShortDate, getSignedAmount } from "../lib/format";
+import { dashboardService } from "../services/dashboardService";
+import { transactionService } from "../services/transactionsServices";
+import type {
+  DashboardAlert,
+  DashboardSummary,
+  OverdueAccount,
+  TransactionItem,
+} from "../types/finance";
+
+const emptySummary: DashboardSummary = {
+  saldoAtual: 0,
+  lucroEmpresarialMes: 0,
+  totalAReceber: 0,
+  totalAPagar: 0,
+  vendasHoje: 0,
+  quantidadeContasAReceberAtrasadas: 0,
+  alertas: [],
+};
 
 function DashboardPage() {
+  const [summary, setSummary] = useState<DashboardSummary>(emptySummary);
+  const [overdueAccounts, setOverdueAccounts] = useState<OverdueAccount[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<TransactionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let shouldUpdate = true;
+
+    async function loadDashboard() {
+      try {
+        setIsLoading(true);
+        setErrorMessage(null);
+
+        const [summaryData, overdueData, recentData] = await Promise.all([
+          dashboardService.getSummary(),
+          dashboardService.getOverdueAccounts(5),
+          transactionService.getAllTransactions({
+            page: 0,
+            size: 3,
+            sort: "data,desc",
+          }),
+        ]);
+
+        if (!shouldUpdate) {
+          return;
+        }
+
+        setSummary(summaryData);
+        setOverdueAccounts(overdueData);
+        setRecentTransactions(recentData.transactions);
+      } catch {
+        if (shouldUpdate) {
+          setErrorMessage("Não foi possível carregar o dashboard agora.");
+        }
+      } finally {
+        if (shouldUpdate) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      shouldUpdate = false;
+    };
+  }, []);
+
   return (
     <div className="space-y-8">
-      <section className="relative">
-        <div className="overflow-hidden rounded-2xl rounded-tr-none bg-primary p-8 text-on-primary shadow-xl shadow-primary/10">
-          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary-container/20 blur-2xl" />
-          <p className="font-label text-sm opacity-90">Quanto sobrou no mes</p>
-          <h2 className="mt-1 font-headline text-4xl font-extrabold tracking-tight">
-            {formatCurrencyBRL(4280)}
-          </h2>
-          <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs">
-            <AppIcon className="h-4 w-4" name="trend-up" />
-            <span>12% a mais que no mes passado</span>
+      <section className="overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-xl shadow-primary/10 lg:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium opacity-90">Saldo atual</p>
+            <h2 className="mt-2 break-words font-headline text-4xl font-extrabold tracking-tight">
+              {isLoading ? "..." : formatCurrencyBRL(summary.saldoAtual)}
+            </h2>
           </div>
+
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
+            <AppIcon className="h-5 w-5" name="wallet" />
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-xl bg-white/10 p-3">
+          <p className="text-xs opacity-80">Lucro empresarial do mes</p>
+          <p className="mt-1 font-headline text-xl font-bold">
+            {isLoading ? "..." : formatCurrencyBRL(summary.lucroEmpresarialMes)}
+          </p>
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-4">
-        {dashboardHighlights.map((item) => (
-          <div
-            key={item.label}
-            className={
-              item.tone === "secondary"
-                ? "flex aspect-square flex-col justify-between rounded-2xl bg-secondary-container p-5"
-                : item.tone === "tertiary"
-                  ? "flex aspect-square flex-col justify-between rounded-2xl border-b-4 border-tertiary bg-surface-container-high p-5"
-                  : "rounded-2xl bg-surface-container-lowest p-5 shadow-sm"
-            }
-          >
-            <AppIcon
-              className={
-                item.tone === "secondary"
-                  ? "h-8 w-8 text-on-secondary-container"
-                  : item.tone === "tertiary"
-                    ? "h-8 w-8 text-tertiary"
-                    : item.tone === "danger"
-                      ? "h-8 w-8 text-error"
-                      : "h-8 w-8 text-secondary"
-              }
-              name={item.icon}
-            />
-            <div>
-              <p className="text-xs text-on-surface-variant">{item.label}</p>
-              <p
-                className={
-                  item.tone === "secondary"
-                    ? "font-headline text-xl font-bold text-on-secondary-container"
-                    : item.tone === "danger"
-                      ? "font-headline text-lg font-bold text-error"
-                      : item.tone === "tertiary"
-                        ? "font-headline text-xl font-bold text-on-surface"
-                        : "font-headline text-lg font-bold text-secondary"
-                }
-              >
-                {item.label === "Vencimento do DAS"
-                  ? "20/04"
-                  : formatCurrencyBRL(item.value)}
-              </p>
-              <p className="mt-1 text-[11px] leading-5 text-on-surface-variant">
-                {item.helperText}
-              </p>
-            </div>
-          </div>
-        ))}
+      {errorMessage ? (
+        <section className="rounded-xl border border-error/20 bg-error-container/10 p-4 text-sm text-error">
+          {errorMessage}
+        </section>
+      ) : null}
+
+      <section className="grid grid-cols-2 gap-3">
+        <MetricCard
+          icon="sparkles"
+          label="Entrou hoje"
+          value={summary.vendasHoje}
+          helperText="Vendas recebidas hoje"
+          tone="secondary"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          icon="wallet"
+          label="A receber"
+          value={summary.totalAReceber}
+          helperText="Valores pendentes"
+          tone="neutral"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          icon="receipt"
+          label="A pagar"
+          value={summary.totalAPagar}
+          helperText="Contas pendentes"
+          tone="danger"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          icon="bell"
+          label="Atrasadas"
+          value={summary.quantidadeContasAReceberAtrasadas}
+          helperText="Contas vencidas"
+          tone="tertiary"
+          isCurrency={false}
+          isLoading={isLoading}
+        />
       </section>
 
-      <section className="space-y-4 rounded-2xl bg-surface-container-low p-6">
-        <div className="flex items-end justify-between gap-4 ">
+      <AlertSection alerts={summary.alertas} isLoading={isLoading} />
+
+      <div className="grid gap-8">
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
           <h3 className="font-headline text-lg font-bold text-on-surface">
-            Entradas vs Saidas
+            Contas atrasadas
           </h3>
-          <span className="text-xs text-on-surface-variant">Ultimos 7 dias</span>
+          <Link className="text-sm font-medium text-primary" to={ROUTE_PATHS.history}>
+            Ver histórico
+          </Link>
         </div>
 
-        <div className="flex h-auto items-end justify-between gap-2 px-2 ">
-          {weeklyFlowChart.map((bar) => (
-            <div key={bar.label} className="flex flex-1 flex-col items-center gap-1 ">
-              <div
-                className="w-full rounded-t-sm bg-secondary/20 "
-                style={{ height: `${bar.expenseHeight}px` }}
-              />
-              <div
-                className="w-full rounded-t-sm bg-secondary"
-                style={{ height: `${bar.incomeHeight}px` }}
-              />
-              <span className="mt-1 text-[8px] opacity-40">{bar.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-center gap-4 pt-2 text-[10px]">
-          <div className="flex items-center gap-1">
-            <div className="h-2 w-2 rounded-full bg-primary-dim" />
-            Saidas
+        {isLoading ? (
+          <DashboardSkeleton rows={2} />
+        ) : overdueAccounts.length > 0 ? (
+          <div className="space-y-3">
+            {overdueAccounts.map((account) => (
+              <article
+                key={account.id}
+                className="rounded-xl border border-error/15 bg-error-container/10 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-on-surface">
+                      {account.descricao}
+                    </p>
+                    <p className="mt-1 text-xs text-on-surface-variant">
+                      {account.categoriaNome} • venceu em {formatShortDate(account.dataVencimento)}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-right text-sm font-bold text-error">
+                    {formatCurrencyBRL(account.valor)}
+                  </p>
+                </div>
+                <p className="mt-2 text-xs font-medium text-error">
+                  {account.diasAtraso === 1
+                    ? "1 dia de atraso"
+                    : `${account.diasAtraso} dias de atraso`}
+                </p>
+              </article>
+            ))}
           </div>
-          <div className="flex items-center gap-1">
-            <div className="h-2 w-2 rounded-full bg-secondary" />
-            Entradas
+        ) : (
+          <div className="rounded-xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
+            Nenhuma conta a receber atrasada.
           </div>
-        </div>
+        )}
       </section>
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-headline text-lg font-bold text-on-surface">
-            Ultimas movimentacoes
+            Últimas movimentações
           </h3>
           <Link className="text-sm font-medium text-primary" to={ROUTE_PATHS.history}>
             Ver tudo
           </Link>
         </div>
 
-        <div className="space-y-3">
-          {recentTransactions.map((transaction) => (
+        {isLoading ? (
+          <DashboardSkeleton rows={3} />
+        ) : recentTransactions.length > 0 ? (
+          <div className="space-y-3">
+            {recentTransactions.map((transaction) => (
             <article
               key={transaction.id}
-              className="flex items-center justify-between gap-4 rounded-2xl bg-surface-container-lowest p-4"
+              className="flex items-center justify-between gap-4 rounded-xl bg-surface-container-lowest p-4 shadow-sm"
             >
               <div className="flex items-center gap-4">
                 <div
@@ -137,33 +218,147 @@ function DashboardPage() {
                   <AppIcon name={transaction.icon} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-on-surface">
+                  <p className="truncate text-sm font-bold text-on-surface">
                     {transaction.title}
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    {transaction.partner}
+                    {transaction.category} • {formatShortDate(transaction.date)}
                   </p>
                 </div>
               </div>
 
-              <div className="text-right">
+              <div className="shrink-0 text-right">
                 <p
                   className={
                     transaction.kind === "income"
-                      ? "font-bold text-secondary"
-                      : "font-bold text-error"
+                      ? "text-sm font-bold text-secondary"
+                      : "text-sm font-bold text-error"
                   }
                 >
                   {getSignedAmount(transaction.kind, transaction.amount)}
                 </p>
-                <p className="text-[10px] text-on-surface-variant">
-                  {transaction.timeLabel}
+                <p className="text-xs text-on-surface-variant">
+                  {transaction.statusLabel}
                 </p>
               </div>
             </article>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
+            Nenhuma movimentação registrada ainda.
+          </div>
+        )}
       </section>
+      </div>
+    </div>
+  );
+}
+
+type MetricCardProps = {
+  icon: "sparkles" | "wallet" | "receipt" | "bell";
+  label: string;
+  value: number;
+  helperText: string;
+  tone: "secondary" | "neutral" | "danger" | "tertiary";
+  isCurrency?: boolean;
+  isLoading: boolean;
+};
+
+function MetricCard({
+  helperText,
+  icon,
+  isCurrency = true,
+  isLoading,
+  label,
+  tone,
+  value,
+}: MetricCardProps) {
+  const toneClasses = {
+    secondary: "bg-secondary-container/80 text-on-secondary-container",
+    neutral: "bg-surface-container-lowest text-secondary",
+    danger: "bg-surface-container-lowest text-error",
+    tertiary: "bg-surface-container-high text-tertiary",
+  };
+
+  return (
+    <article className="flex min-h-36 flex-col justify-between rounded-xl bg-surface-container-lowest p-4 shadow-sm">
+      <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${toneClasses[tone]}`}>
+        <AppIcon className="h-5 w-5" name={icon} />
+      </div>
+
+      <div>
+        <p className="text-xs text-on-surface-variant">{label}</p>
+        <p className="mt-1 break-words font-headline text-lg font-bold text-on-surface">
+          {isLoading ? "..." : isCurrency ? formatCurrencyBRL(value) : value}
+        </p>
+        <p className="mt-1 text-xs leading-4 text-on-surface-variant">{helperText}</p>
+      </div>
+    </article>
+  );
+}
+
+function AlertSection({
+  alerts,
+  isLoading,
+}: {
+  alerts: DashboardAlert[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return <DashboardSkeleton rows={1} />;
+  }
+
+  if (alerts.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-3">
+      <h3 className="font-headline text-lg font-bold text-on-surface">Alertas</h3>
+      <div className="space-y-3">
+        {alerts.map((alert) => (
+          <article
+            key={`${alert.tipo}-${alert.dataReferencia ?? alert.quantidade ?? alert.titulo}`}
+            className={
+              alert.severidade === "DANGER"
+                ? "rounded-xl border border-error/20 bg-error-container/10 p-4"
+                : "rounded-xl border border-tertiary/20 bg-tertiary-container/20 p-4"
+            }
+          >
+            <div className="flex gap-3">
+              <div
+                className={
+                  alert.severidade === "DANGER"
+                    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
+                    : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-tertiary-container text-tertiary"
+                }
+              >
+                <AppIcon className="h-5 w-5" name="bell" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-on-surface">{alert.titulo}</p>
+                <p className="mt-1 text-xs leading-5 text-on-surface-variant">
+                  {alert.mensagem}
+                </p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DashboardSkeleton({ rows }: { rows: number }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          key={index}
+          className="h-20 animate-pulse rounded-xl bg-surface-container-low"
+        />
+      ))}
     </div>
   );
 }
