@@ -66,13 +66,13 @@ function NewTransactionPage() {
     try {
       await transactionService.createTransaction(data);
 
-      toast.success("Movimentação guardada com sucesso!", {
+      toast.success("Movimentação salva com sucesso!", {
           description: `${data.description} no valor de R$ ${data.amount} foi registrada.`,
           duration: 4000,
       });
       navigate(ROUTE_PATHS.history || "/historico");
     } catch (error) {
-      toast.error("Erro ao guardar a movimentação." , {
+      toast.error("Erro ao salvar a movimentação." , {
           description: getErrorMessage(error) ?? "Por favor, tente novamente mais tarde."
       });
     } finally {
@@ -81,13 +81,13 @@ function NewTransactionPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+    <div className="mx-auto max-w-2xl space-y-3 sm:space-y-5">
+      <header className="hidden sm:block">
+        <h2 className="font-headline text-xl font-bold tracking-tight text-on-surface sm:text-2xl">
           Nova Movimentação
         </h2>
-        <p className="text-sm text-on-surface-variant">
-          Registe uma nova entrada ou saída.
+        <p className="text-xs text-on-surface-variant sm:text-sm">
+          Registre uma nova entrada ou saída.
         </p>
       </header>
 
@@ -108,7 +108,7 @@ function NewTransactionPage() {
       )}
 
       <Link
-        className="flex h-14 w-full items-center justify-center rounded-xl text-outline transition hover:bg-surface-container-low font-medium mt-4"
+        className="mt-0 flex h-11 w-full items-center justify-center rounded-xl font-medium text-outline transition hover:bg-surface-container-low sm:h-14"
         to={ROUTE_PATHS.dashboard || "/"}
       >
         Cancelar e voltar
