@@ -17,9 +17,15 @@ function toTransactionCategory(category: CategoryResponse): TransactionCategory 
     id: category.id,
     name: category.nome,
     tipo: category.tipo,
+    isDefault: category.padrao,
     icon: category.tipo === "RECEITA" ? "sale" : "tag",
   };
 }
+
+export type CategoryFormPayload = {
+  nome: string;
+  tipo: ApiTransactionKind;
+};
 
 export const categoriesService = {
   async getAllCategories(tipo?: ApiTransactionKind) {
@@ -32,5 +38,19 @@ export const categoriesService = {
     });
 
     return (response.data.content ?? []).map(toTransactionCategory);
+  },
+
+  async createCategory(data: CategoryFormPayload) {
+    const response = await api.post<CategoryResponse>("/categorias", data);
+    return toTransactionCategory(response.data);
+  },
+
+  async updateCategory(id: string, data: CategoryFormPayload) {
+    const response = await api.put<CategoryResponse>(`/categorias/${id}`, data);
+    return toTransactionCategory(response.data);
+  },
+
+  async deleteCategory(id: string) {
+    await api.delete(`/categorias/${id}`);
   },
 };

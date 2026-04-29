@@ -21,6 +21,7 @@ export type IconName =
   | "heart"
   | "chat"
   | "logout"
+  | "trash"
   | "briefcase"
   | "user"
   | "sale"

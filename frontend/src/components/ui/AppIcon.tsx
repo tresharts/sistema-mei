@@ -184,6 +184,16 @@ function AppIcon({ className, filled = false, name, ...props }: AppIconProps) {
           <path d="M11 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5" />
         </svg>
       );
+    case "trash":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 7h16" />
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+          <path d="M6 7l1 13h10l1-13" />
+          <path d="M9 7V4h6v3" />
+        </svg>
+      );
     case "briefcase":
       return (
         <svg {...commonProps}>

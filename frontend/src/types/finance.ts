@@ -53,6 +53,36 @@ export interface DashboardHighlight {
   tone: SurfaceTone;
 }
 
+export type DashboardAlertSeverity = "INFO" | "WARNING" | "DANGER";
+
+export interface DashboardAlert {
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  quantidade: number | null;
+  severidade: DashboardAlertSeverity;
+  dataReferencia: string | null;
+}
+
+export interface DashboardSummary {
+  saldoAtual: number;
+  lucroEmpresarialMes: number;
+  totalAReceber: number;
+  totalAPagar: number;
+  vendasHoje: number;
+  quantidadeContasAReceberAtrasadas: number;
+  alertas: DashboardAlert[];
+}
+
+export interface OverdueAccount {
+  id: string;
+  descricao: string;
+  valor: number;
+  dataVencimento: string;
+  diasAtraso: number;
+  categoriaNome: string;
+}
+
 export interface ChartDatum {
   label: string;
   incomeHeight: number;
@@ -63,6 +93,7 @@ export interface TransactionCategory {
   id: string;
   name: string;
   tipo: ApiTransactionKind;
+  isDefault: boolean;
   icon: IconName;
 }
 
