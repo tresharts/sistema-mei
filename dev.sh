@@ -107,9 +107,9 @@ start_frontend() {
 
   local run_cmd
   if [ -f "$ROOT_DIR/frontend/pnpm-lock.yaml" ] && command -v pnpm >/dev/null 2>&1; then
-    run_cmd="pnpm dev"
+    run_cmd="pnpm dev -- --host 0.0.0.0 --port 5173"
   else
-    run_cmd="npm run dev"
+    run_cmd="npm run dev -- --host 0.0.0.0 --port 5173"
   fi
 
   echo "Subindo frontend com '$run_cmd' (VITE_API_URL=$FRONTEND_DEV_API_URL)..."
@@ -178,6 +178,13 @@ print_status() {
 
   if is_pid_running "$FRONTEND_PID_FILE"; then
     echo "Frontend: rodando (PID $(cat "$FRONTEND_PID_FILE")) em http://localhost:5173"
+    if command -v hostname >/dev/null 2>&1; then
+      local lan_ip
+      lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+      if [ -n "$lan_ip" ]; then
+        echo "Frontend na rede local: http://$lan_ip:5173"
+      fi
+    fi
     echo "Frontend API (override no dev.sh): $FRONTEND_DEV_API_URL"
     echo "Backend refresh cookie path: $BACKEND_AUTH_REFRESH_COOKIE_PATH"
   else
