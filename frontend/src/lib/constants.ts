@@ -18,7 +18,7 @@ export const APP_NAVIGATION: NavItem[] = [
     path: ROUTE_PATHS.dashboard,
   },
   {
-    label: "Historico",
+    label: "Histórico",
     icon: "history",
     path: ROUTE_PATHS.history,
   },

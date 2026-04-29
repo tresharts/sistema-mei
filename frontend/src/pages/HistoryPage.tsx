@@ -89,17 +89,17 @@ export default function HistoryPage() {
   }, [transactions]);
 
   return (
-    <div className="max-w-md mx-auto pb-24">
-      <header className="p-6 pb-2">
+    <div className="mx-auto w-full pb-24 lg:pb-0">
+      <header className="pb-6">
         <h1 className="text-3xl font-headline font-bold text-on-surface">Histórico</h1>
         <p className="text-on-surface-variant text-sm">Suas movimentações financeiras</p>
       </header>
 
-      <div className="px-4 mb-6">
+      <div className="mb-6">
         <TransactionFilters categories={categories} onFilterChange={setFilters} />
       </div>
 
-      <main className="px-4 space-y-8">
+      <main className="space-y-8">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -169,7 +169,7 @@ function TransactionCard({
           disabled={!isPending}
           className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all active:scale-95
             ${isPending 
-              ? 'bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-300' 
+              ? 'bg-tertiary-container text-on-tertiary-container border border-tertiary/20 hover:bg-primary-container' 
               : 'bg-surface-container-highest text-on-surface-variant cursor-default opacity-80'
             } uppercase tracking-wide`}
         >
