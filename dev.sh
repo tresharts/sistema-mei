@@ -13,6 +13,7 @@ BACKEND_LOG_FILE="$LOG_DIR/backend.log"
 FRONTEND_LOG_FILE="$LOG_DIR/frontend.log"
 FRONTEND_DEV_API_URL="${FRONTEND_DEV_API_URL:-/api}"
 BACKEND_AUTH_REFRESH_COOKIE_PATH="${BACKEND_AUTH_REFRESH_COOKIE_PATH:-/api/auth}"
+BACKEND_HEALTH_URL="${BACKEND_HEALTH_URL:-http://localhost:8080/health}"
 
 MODE="${1:-up}"
 
@@ -48,6 +49,24 @@ cleanup_stale_pid() {
   fi
 }
 
+wait_for_backend() {
+  local pid="$1"
+
+  for _ in {1..45}; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      return 1
+    fi
+
+    if curl -fsS "$BACKEND_HEALTH_URL" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  return 1
+}
+
 start_backend() {
   cleanup_stale_pid "$BACKEND_PID_FILE"
 
@@ -62,19 +81,20 @@ start_backend() {
   fi
 
   echo "Subindo backend..."
-  nohup bash -lc "cd \"$ROOT_DIR/backend\" && AUTH_REFRESH_COOKIE_PATH=\"$BACKEND_AUTH_REFRESH_COOKIE_PATH\" ./dev.sh" >>"$BACKEND_LOG_FILE" 2>&1 &
+  : >"$BACKEND_LOG_FILE"
+  nohup bash -lc "cd \"$ROOT_DIR/backend\" && MSYS_NO_PATHCONV=1 AUTH_REFRESH_COOKIE_PATH=\"$BACKEND_AUTH_REFRESH_COOKIE_PATH\" ./dev.sh" >>"$BACKEND_LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$BACKEND_PID_FILE"
 
-  sleep 2
-  if ! kill -0 "$pid" 2>/dev/null; then
-    echo "Falha ao subir backend. Ultimas linhas de log:"
+  if ! wait_for_backend "$pid"; then
+    echo "Falha ao subir backend ou health nao respondeu em $BACKEND_HEALTH_URL."
+    echo "Ultimas linhas de log:"
     tail -n 30 "$BACKEND_LOG_FILE" || true
     rm -f "$BACKEND_PID_FILE"
     exit 1
   fi
 
-  echo "Backend iniciado (PID $pid)."
+  echo "Backend iniciado (PID $pid) e health OK."
 }
 
 start_frontend() {
@@ -87,13 +107,13 @@ start_frontend() {
 
   local run_cmd
   if [ -f "$ROOT_DIR/frontend/pnpm-lock.yaml" ] && command -v pnpm >/dev/null 2>&1; then
-    run_cmd="pnpm dev"
+    run_cmd="pnpm dev -- --host 0.0.0.0 --port 5173"
   else
-    run_cmd="npm run dev"
+    run_cmd="npm run dev -- --host 0.0.0.0 --port 5173"
   fi
 
   echo "Subindo frontend com '$run_cmd' (VITE_API_URL=$FRONTEND_DEV_API_URL)..."
-  nohup bash -lc "cd \"$ROOT_DIR/frontend\" && VITE_API_URL=\"$FRONTEND_DEV_API_URL\" $run_cmd" >>"$FRONTEND_LOG_FILE" 2>&1 &
+  nohup bash -lc "cd \"$ROOT_DIR/frontend\" && MSYS_NO_PATHCONV=1 VITE_API_URL=\"$FRONTEND_DEV_API_URL\" $run_cmd" >>"$FRONTEND_LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" >"$FRONTEND_PID_FILE"
 
@@ -147,12 +167,24 @@ print_status() {
 
   if is_pid_running "$BACKEND_PID_FILE"; then
     echo "Backend: rodando (PID $(cat "$BACKEND_PID_FILE")) em http://localhost:8080"
+    if curl -fsS "$BACKEND_HEALTH_URL" >/dev/null 2>&1; then
+      echo "Backend health: OK"
+    else
+      echo "Backend health: sem resposta em $BACKEND_HEALTH_URL"
+    fi
   else
     echo "Backend: parado"
   fi
 
   if is_pid_running "$FRONTEND_PID_FILE"; then
     echo "Frontend: rodando (PID $(cat "$FRONTEND_PID_FILE")) em http://localhost:5173"
+    if command -v hostname >/dev/null 2>&1; then
+      local lan_ip
+      lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+      if [ -n "$lan_ip" ]; then
+        echo "Frontend na rede local: http://$lan_ip:5173"
+      fi
+    fi
     echo "Frontend API (override no dev.sh): $FRONTEND_DEV_API_URL"
     echo "Backend refresh cookie path: $BACKEND_AUTH_REFRESH_COOKIE_PATH"
   else

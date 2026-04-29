@@ -10,12 +10,32 @@ const shortDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "short",
 });
 
+function parseLocalDate(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return new Date(date);
+  }
+
+  return new Date(year, month - 1, day);
+}
+
 export function formatCurrencyBRL(value: number) {
   return currencyFormatter.format(value);
 }
 
 export function formatShortDate(date: string) {
-  return shortDateFormatter.format(new Date(date));
+  return shortDateFormatter.format(parseLocalDate(date));
+}
+
+export function formatDateBRL(date: string) {
+  const [year, month, day] = date.split("-");
+
+  if (!year || !month || !day) {
+    return date;
+  }
+
+  return `${day}/${month}/${year}`;
 }
 
 export function getSignedAmount(kind: TransactionKind, value: number) {

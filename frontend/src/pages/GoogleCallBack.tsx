@@ -10,12 +10,7 @@ function GoogleCallbackPage() {
     let mounted = true;
 
     const finishGoogleLogin = async () => {
-      const currentToken = localStorage.getItem("acessToken");
-      if (currentToken) {
-        navigate(ROUTE_PATHS.dashboard, { replace: true });
-        return;
-      }
-
+      localStorage.removeItem("acessToken");
       const token = await refreshSession();
       if (!mounted) {
         return;

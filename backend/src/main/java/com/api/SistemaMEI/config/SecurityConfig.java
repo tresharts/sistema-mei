@@ -36,9 +36,12 @@ public class SecurityConfig {
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(Customizer.withDefaults())
+            .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(req -> {
                 req.requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll();
+                req.requestMatchers("/h2-console/**")
                     .permitAll();
                 req.requestMatchers(HttpMethod.GET, "/health")
                     .permitAll();

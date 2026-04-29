@@ -1,73 +1,109 @@
-import {api} from '../lib/api';
-import { formatShortDate } from '../lib/format';
-import type { 
-    apiTransaction,
-    TransactionKind,
-    TransactionItem,
-    TransactionScope,
-    TransactionStatus
-} from '../types/finance';
-import { IconName } from '../types/ui';
+import { api } from "../lib/api";
+import { TransactionFormData } from "../components/transactions/TransactionForm";
+import type { TransactionFiltersData } from "../components/transactions/TransactionFilters";
+import type {
+  ApiTransaction,
+  ApiTransactionStatus,
+  TransactionItem,
+  TransactionKind,
+  TransactionScope,
+  TransactionStatus,
+} from "../types/finance";
 
+type TransactionListParams = TransactionFiltersData & {
+  page?: number;
+  size?: number;
+  sort?: string;
+};
 
-export function mapTransactiontoFrontend(apiData: apiTransaction): TransactionItem {
-    const kind: TransactionKind = apiData.tipo === 'RECEITA' ? 'income' : 'expense';
+const mapToBackend = (data: TransactionFormData) => {
+  return {
+    valor: parseFloat(data.amount),
+    descricao: data.description,
+    data: data.date,
+    dataVencimento: data.status === "pending" ? data.dueDate : null,
+    tipo: data.kind === "income" ? "RECEITA" : "DESPESA",
+    classificacao: data.scope === "business" ? "EMPRESARIAL" : "PESSOAL",
+    status: mapStatusToBackend(data.kind, data.status),
+    categoriaId: data.categoryId
+  };
+};
 
-    const scope: TransactionScope = apiData.classificacao === 'EMPRESARIAL' ? 'business' : 'personal';
-    const scopeLabel = apiData.classificacao === 'EMPRESARIAL' ? 'Empresa' : 'Pessoal';
+const mapStatusToBackend = (kind: "income" | "expense", status: "settled" | "pending") => {
+  if (kind === "income") {
+    return status === "settled" ? "RECEBIDO" : "A_RECEBER";
+  }
+  return status === "settled" ? "PAGO" : "A_PAGAR";
+};
 
-    let status: TransactionStatus = 'pending';
-    let statusLabel: string = 'Pendente';
+const mapKindFromBackend = (tipo: ApiTransaction["tipo"]): TransactionKind =>
+  tipo === "RECEITA" ? "income" : "expense";
 
-    switch (apiData.status) {
-        case 'PAGA':
-            status = 'settled'; statusLabel = 'Paga';
-            break;
-        case 'RECEBIDO':
-            status = 'settled'; statusLabel = 'Recebida';
-            break;
-        case 'A_PAGAR':
-            status = 'pending'; statusLabel = 'A Pagar';
-            break;
-        case 'A_RECEBER':
-            status = 'pending'; statusLabel = 'A Receber';
-            break;
-        case 'VENCIDO':
-            status = 'overdue'; statusLabel = 'Vencida';
-            break;
-    }
+const mapScopeFromBackend = (classificacao: ApiTransaction["classificacao"]): TransactionScope =>
+  classificacao === "EMPRESARIAL" ? "business" : "personal";
 
-    const icon: IconName = kind === 'income' ? 'arrow-up' : 'arrow-down';
+const mapStatusFromBackend = (status: ApiTransactionStatus): TransactionStatus =>
+  status === "PAGO" || status === "RECEBIDO" ? "settled" : "pending";
 
-    return {
-        id: apiData.id,
-        title: apiData.descricao,
-        amount: apiData.valor,
-        kind,
-        scope,
-        scopeLabel,
-        category: apiData.categoria,
-        status,
-        statusLabel,
-        date: apiData.dataMovimentacao,
-        dueDate: apiData.dataVencimento,
-        timeLabel: formatShortDate(apiData.dataMovimentacao),
-        icon,
+const mapStatusLabelFromBackend = (status: ApiTransactionStatus) => {
+  const labels: Record<ApiTransactionStatus, string> = {
+    PAGO: "Pago",
+    A_PAGAR: "A pagar",
+    RECEBIDO: "Recebido",
+    A_RECEBER: "A receber",
+  };
+
+  return labels[status];
+};
+
+export function toTransactionItem(transaction: ApiTransaction): TransactionItem {
+  const kind = mapKindFromBackend(transaction.tipo);
+  const scope = mapScopeFromBackend(transaction.classificacao);
+
+  return {
+    id: transaction.id,
+    title: transaction.descricao,
+    amount: transaction.valor,
+    kind,
+    scope,
+    scopeLabel: scope === "business" ? "Empresarial" : "Pessoal",
+    category: transaction.categoriaNome,
+    status: mapStatusFromBackend(transaction.status),
+    statusLabel: mapStatusLabelFromBackend(transaction.status),
+    date: transaction.data,
+    dueDate: transaction.dataVencimento,
+    timeLabel: transaction.data,
+    icon: kind === "income" ? "sale" : "shopping-bag",
+  };
+}
+
+export const transactionService = {
+  
+  async createTransaction(data: TransactionFormData) {
+    const payload = mapToBackend(data);
+    const response = await api.post<ApiTransaction>("/movimentacoes", payload);
+    return response.data;
+  },
+    
+  async getAllTransactions(params?: TransactionListParams) {
+    const response = await api.get<{ 
+      content?: ApiTransaction[], 
+      totalPages: number 
+      }> ("/movimentacoes", { params });
+
+    return{
+      transactions: (response.data.content ?? []).map(toTransactionItem),
+      totalPages: response.data.totalPages,
     };
-}
+  },
 
+  async deleteTransaction(id: string) {
+    await api.delete(`/movimentacoes/${id}`);
+  },
 
-export const TransactionService = {
-    async getAllTransactions(): Promise<TransactionItem[]> {
-        const response = await api.get<apiTransaction[]>('/caminho da função de movimentacao no back');
-        return response.data.map(mapTransactiontoFrontend);
-    },
+  async updateStatus(id: string, status: ApiTransactionStatus){
+    const response = await api.patch<ApiTransaction>(`/movimentacoes/${id}/status`, { status});
 
-    async createTransaction(dados: Partial<apiTransaction>): Promise<void> {
-        await api.post('/caminho da função de movimentação no back', dados);
-    },
-
-    async deleteTransaction(id: string): Promise<void> {
-        await api.delete(`/caminho da função de movimentacao no back/${id}`);
-    }
-}
+    return toTransactionItem(response.data);
+ }
+};

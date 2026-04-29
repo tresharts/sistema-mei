@@ -12,8 +12,60 @@ if [ "$#" -gt 1 ]; then
   exit 1
 fi
 
+run_maven() {
+  local mvn_args=("$@")
+
+  if [ -x "./mvnw" ]; then
+    if ./mvnw "${mvn_args[@]}"; then
+      return 0
+    fi
+
+    echo "Maven Wrapper falhou."
+  fi
+
+  if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
+    if [ -f "./mvnw.cmd" ] && command -v cmd.exe >/dev/null 2>&1; then
+      echo "Tentando Maven Wrapper do Windows..."
+      if MSYS_NO_PATHCONV=1 cmd.exe /c mvnw.cmd "${mvn_args[@]}"; then
+        return 0
+      fi
+      echo "Maven Wrapper do Windows falhou."
+    fi
+  fi
+
+  if command -v mvn >/dev/null 2>&1; then
+    echo "Tentando usar Maven instalado no sistema..."
+    mvn "${mvn_args[@]}"
+    return $?
+  fi
+
+  echo "Nao foi possivel executar Maven."
+  echo "Verifique sua conexao com repo.maven.apache.org, limpe o cache em ~/.m2/wrapper/dists ou instale o comando 'mvn'."
+  return 1
+}
+
+cleanup_backend_port() {
+  if command -v lsof >/dev/null 2>&1; then
+    local pids
+    pids="$(lsof -ti:8080 2>/dev/null || true)"
+
+    if [ -n "$pids" ]; then
+      echo "$pids" | xargs kill -9 2>/dev/null || true
+    fi
+
+    return 0
+  fi
+
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -k 8080/tcp >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  echo "Aviso: nao encontrei lsof/fuser para liberar a porta 8080 automaticamente."
+}
+
 if [ "$MODE" = "test" ] || [ "$MODE" = "teste" ]; then
-  ./mvnw test
+  run_maven test
   exit 0
 fi
 
@@ -127,6 +179,6 @@ fi
 reset_h2_if_configured
 
 # Limpa a porta 8080 caso esteja ocupada.
-lsof -ti:8080 | xargs kill -9 2>/dev/null || true
+cleanup_backend_port
 
-./mvnw spring-boot:run
+run_maven spring-boot:run

@@ -1,4 +1,5 @@
 export type IconName =
+    "filter_list"
   | "grid"
   | "add-circle"
   | "history"
@@ -20,10 +21,12 @@ export type IconName =
   | "heart"
   | "chat"
   | "logout"
+  | "trash"
   | "briefcase"
   | "user"
   | "sale"
   | "box";
+
 
 export type SurfaceTone =
   | "primary"

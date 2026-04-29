@@ -1,143 +1,181 @@
+import { useEffect, useState, useMemo } from "react";
+import TransactionFilters, { TransactionFiltersData } from "../components/transactions/TransactionFilters";
+import { transactionService } from "../services/transactionsServices";
+import { categoriesService } from "../services/categoriesService";
 import AppIcon from "../components/ui/AppIcon";
-import { historyGroups } from "../data/mockData";
-import { cn } from "../lib/cn";
-import { formatCurrencyBRL, getSignedAmount } from "../lib/format";
-function HistoryPage() {
+import type { 
+  TransactionItem, 
+  TransactionCategory, 
+  HistoryGroup, 
+  TransactionStatus, 
+  TransactionKind 
+} from "../types/finance";
+import { toast } from "sonner";
+
+export default function HistoryPage() {
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [categories, setCategories] = useState<TransactionCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState<TransactionFiltersData>({});
+
+  useEffect(() => {
+    categoriesService.getAllCategories()
+      .then(setCategories)
+      .catch(() => toast.error("Erro ao carregar categorias"));
+  }, []);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const { transactions: data } = await transactionService.getAllTransactions(filters as any);
+        setTransactions(data);
+      } catch (error) {
+        toast.error("Erro ao sincronizar com o servidor");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, [filters]);
+
+ const handleStatusChange = async (id: string, currentStatus: TransactionStatus, kind: TransactionKind) => {
+  if (currentStatus !== "pending") return;
+
+  try {
+    const apiStatus = kind === "income" ? "RECEBIDO" : "PAGO";
+
+    await transactionService.updateStatus(id, apiStatus);
+    
+    setTransactions(prev => prev.map(t => {
+      if (t.id === id) {
+        return { 
+          ...t, 
+          status: "settled" as TransactionStatus, 
+          statusLabel: t.kind === "income" ? "Recebido" : "Pago" 
+        };
+      }
+      return t;
+    }));
+
+    toast.success("Status atualizado!");
+  } catch (error) {
+    toast.error("Erro ao atualizar no servidor");
+  }
+};
+
+  const groupedTransactions = useMemo((): HistoryGroup[] => {
+    const groups: Record<string, TransactionItem[]> = {};
+    
+    transactions.forEach(item => {
+      const date = item.date;
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(item);
+    });
+
+    return Object.entries(groups).map(([date, items]) => {
+      const formattedDate = new Date(date).toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: 'long' 
+      });
+
+      return {
+        id: date,
+        label: date === new Date().toISOString().split('T')[0] ? "Hoje" : formattedDate,
+        dateLabel: formattedDate,
+        items
+      };
+    });
+  }, [transactions]);
+
   return (
-    <div className="space-y-10">
-      <section className="space-y-6">
-        <header>
-          <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
-            Historico
-          </h2>
-          <p className="text-sm text-on-surface-variant">
-            Acompanhe cada detalhe da sua arte financeira.
-          </p>
-        </header>
+    <div className="mx-auto w-full pb-24 lg:pb-0">
+      <header className="pb-6">
+        <h1 className="text-3xl font-headline font-bold text-on-surface">Histórico</h1>
+        <p className="text-on-surface-variant text-sm">Suas movimentações financeiras</p>
+      </header>
 
-        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-2">
-          <button className="whitespace-nowrap rounded-full bg-primary px-5 py-2 text-sm font-medium text-on-primary">
-            Mes atual
-          </button>
-          <button className="whitespace-nowrap rounded-full bg-surface-container-high px-5 py-2 text-sm font-medium text-on-surface-variant">
-            Mes passado
-          </button>
-          <button className="whitespace-nowrap rounded-full bg-surface-container-high px-5 py-2 text-sm font-medium text-on-surface-variant">
-            Personalizado
-          </button>
-        </div>
+      <div className="mb-6">
+        <TransactionFilters categories={categories} onFilterChange={setFilters} />
+      </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex aspect-video flex-col justify-between rounded-2xl bg-surface-container-low p-4">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-              Fluxo
-            </span>
-            <div className="mt-2 flex gap-2">
-              <button className="rounded-full bg-secondary-container p-2 text-on-secondary-container">
-                <AppIcon className="h-4 w-4" name="arrow-up" />
-              </button>
-              <button className="rounded-full bg-error-container p-2 text-on-error-container">
-                <AppIcon className="h-4 w-4" name="arrow-down" />
-              </button>
-            </div>
+      <main className="space-y-8">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-on-surface-variant font-medium">Buscando dados no servidor...</p>
           </div>
-
-          <div className="flex aspect-video flex-col justify-between rounded-2xl bg-surface-container-low p-4">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">
-              Esfera
-            </span>
-            <div className="mt-2 flex gap-2">
-              <button className="rounded-full bg-surface-container-highest px-3 py-1 text-[10px] font-bold text-on-surface-variant">
-                EMPRESA
-              </button>
-              <button className="rounded-full bg-surface-container-highest px-3 py-1 text-[10px] font-bold text-on-surface-variant">
-                PESSOAL
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-8">
-        {historyGroups.map((group) => (
-          <div key={group.id}>
-            <div className="mb-4 flex items-center gap-4">
-              <span className="font-headline text-lg font-bold text-primary">
+        ) : groupedTransactions.length > 0 ? (
+          groupedTransactions.map(group => (
+            <section key={group.id} className="space-y-3">
+              <h3 className="text-xs font-bold text-outline px-2 uppercase tracking-tighter">
                 {group.label}
-              </span>
-              <div className="h-px flex-1 bg-surface-container-highest" />
-              <span className="text-xs font-medium text-on-surface-variant">
-                {group.dateLabel}
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              {group.items.map((item) => (
-                <article
-                  key={item.id}
-                  className="flex items-center gap-4 rounded-[1.5rem] rounded-bl-lg bg-surface-container-lowest p-5 shadow-editorial"
-                >
-                  <div
-                    className={cn(
-                      "flex h-12 w-12 items-center justify-center rounded-full",
-                      item.kind === "income"
-                        ? "bg-secondary-container text-on-secondary-container"
-                        : item.scope === "personal"
-                          ? "bg-surface-container-high text-on-surface-variant"
-                          : "bg-error-container text-on-error-container",
-                    )}
-                  >
-                    <AppIcon name={item.icon} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-headline text-base font-semibold text-on-surface">
-                      {item.title}
-                    </h4>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight",
-                          item.scope === "business"
-                            ? "bg-tertiary-container text-on-tertiary-container"
-                            : "bg-surface-container-highest text-on-surface-variant",
-                        )}
-                      >
-                        {item.scopeLabel}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant">
-                        {item.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <p
-                      className={cn(
-                        "font-headline text-lg font-bold",
-                        item.kind === "income"
-                          ? "text-secondary"
-                          : item.scope === "personal"
-                            ? "text-on-surface-variant"
-                            : "text-error",
-                      )}
-                    >
-                      {item.kind === "income"
-                        ? getSignedAmount(item.kind, item.amount)
-                        : `- ${formatCurrencyBRL(item.amount)}`}
-                    </p>
-                    <p className="text-[10px] text-on-surface-variant">
-                      {item.timeLabel}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
+              </h3>
+              
+              <div className="space-y-2">
+                {group.items.map(item => (
+                  <TransactionCard 
+                    key={item.id} 
+                    item={item} 
+                    onStatusChange={handleStatusChange} 
+                  />
+                ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <div className="text-center py-20 animate-in fade-in zoom-in duration-300">
+            <AppIcon name="box" className="mx-auto h-12 w-12 text-outline/30 mb-4" />
+            <p className="text-on-surface-variant">Nenhuma movimentação encontrada</p>
           </div>
-        ))}
-      </section>
+        )}
+      </main>
     </div>
   );
 }
 
-export default HistoryPage;
+function TransactionCard({ 
+  item, 
+  onStatusChange 
+}: { 
+  item: TransactionItem; 
+  onStatusChange: (id: string, currentStatus: TransactionStatus, kind: TransactionKind) => void 
+}) {
+  const isIncome = item.kind === "income";
+  const isPending = item.status === "pending";
+  
+  return (
+    <div className="group relative bg-surface-container-low hover:bg-surface-container-high transition-all p-4 rounded-[24px] border border-outline-variant/20 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <div className={`p-3 rounded-2xl ${isIncome ? 'bg-secondary-container text-on-secondary-container' : 'bg-error-container text-on-error-container'}`}>
+          <AppIcon name={item.icon as any} className="w-6 h-6" />
+        </div>
+        
+        <div className="flex flex-col">
+          <span className="font-bold text-on-surface leading-tight">{item.title}</span>
+          <span className="text-xs text-on-surface-variant">
+            {item.category} • {item.scopeLabel}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-end gap-1">
+        <span className={`font-bold text-lg ${isIncome ? 'text-secondary' : 'text-error'}`}>
+          {isIncome ? '+' : '-'} {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount)}
+        </span>
+        
+        <button 
+          onClick={() => onStatusChange(item.id, item.status, item.kind)}
+          disabled={!isPending}
+          className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all active:scale-95
+            ${isPending 
+              ? 'bg-tertiary-container text-on-tertiary-container border border-tertiary/20 hover:bg-primary-container' 
+              : 'bg-surface-container-highest text-on-surface-variant cursor-default opacity-80'
+            } uppercase tracking-wide`}
+        >
+          {item.statusLabel}
+        </button>
+      </div>
+    </div>
+  );
+}

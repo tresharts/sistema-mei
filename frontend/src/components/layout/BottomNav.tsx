@@ -5,7 +5,7 @@ import AppIcon from "../ui/AppIcon";
 
 function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md rounded-t-[3rem] border-t border-on-surface/10 bg-background px-4 pb-6 pt-3 shadow-[0_-8px_24px_rgba(52,50,47,0.06)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md rounded-t-[3rem] border-t border-on-surface/10 bg-background px-4 pb-6 pt-3 shadow-[0_-8px_24px_rgba(52,50,47,0.06)] lg:hidden">
       <ul className="flex items-center justify-around gap-2">
         {APP_NAVIGATION.map((item) => (
           <li key={item.path}>
