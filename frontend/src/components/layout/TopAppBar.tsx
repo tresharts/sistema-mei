@@ -14,8 +14,8 @@ function TopAppBar({ title, variant }: TopAppBarProps) {
 
   if (variant === "modal") {
     return (
-      <header className="fixed inset-x-0 top-0 z-50 mx-auto h-16 w-full max-w-md bg-background/80 px-6 backdrop-blur-xl">
-        <div className="flex h-full items-center justify-between">
+      <header className="fixed inset-x-0 top-0 z-50 mx-auto h-16 w-full max-w-md bg-background/80 px-6 backdrop-blur-xl lg:left-56 lg:mx-0 lg:max-w-none lg:px-6">
+        <div className="flex h-full items-center gap-3">
           <button
             aria-label="Voltar"
             className="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant transition hover:bg-surface-container-low"
@@ -25,18 +25,16 @@ function TopAppBar({ title, variant }: TopAppBarProps) {
             <AppIcon name="close" />
           </button>
 
-          <h1 className="font-headline text-lg font-extrabold tracking-tight text-primary">
+          <h1 className="truncate font-headline text-lg font-extrabold tracking-tight text-primary">
             {title}
           </h1>
-
-          <div className="w-10" />
         </div>
       </header>
     );
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 mx-auto h-16 w-full max-w-md bg-background/80 px-6 backdrop-blur-xl shadow-sm shadow-on-surface/5">
+    <header className="fixed inset-x-0 top-0 z-50 mx-auto h-16 w-full max-w-md bg-background/80 px-6 backdrop-blur-xl shadow-sm shadow-on-surface/5 lg:left-56 lg:mx-0 lg:max-w-none lg:px-6">
       <div className="flex h-full items-center justify-between">
         <div className="flex items-center gap-3">
           <Avatar initials="CO" size="sm" />
@@ -48,7 +46,7 @@ function TopAppBar({ title, variant }: TopAppBarProps) {
         </div>
 
         <button
-          aria-label="Notificacoes"
+          aria-label="Notificações"
           className="flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:bg-primary/10"
           type="button"
         >
