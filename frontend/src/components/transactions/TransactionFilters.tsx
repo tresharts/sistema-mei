@@ -7,7 +7,6 @@ interface TransactionFiltersProps {
   onFilterChange: (filters: TransactionFiltersData) => void;
   categories: TransactionCategory[];
 }
-
 export interface TransactionFiltersData {
   dataInicio?: string;
   dataFim?: string;
@@ -42,7 +41,7 @@ export default function TransactionFilters({ onFilterChange, categories }: Trans
   };
 
   return (
-    <div className="space-y-4 rounded-2xl bg-surface-container-low p-4 border border-outline-variant/30">
+    <div className="space-y-4 rounded-2xl bg-surface-container-low p-5 border border-outline-variant/30 ">
       <div className="flex items-center justify-between">        
         <div className="flex items-center gap-2">
             <AppIcon name="filter_list" className="h-4 w-4 text-primary" />
@@ -56,7 +55,7 @@ export default function TransactionFilters({ onFilterChange, categories }: Trans
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr] lg:items-end">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr] lg:items-end ">
         <div className="space-y-2 ">
           <label className="text-xs font-medium px-1">Período (Início/Fim)</label>
           <div className="grid grid-cols-2 gap-2">
