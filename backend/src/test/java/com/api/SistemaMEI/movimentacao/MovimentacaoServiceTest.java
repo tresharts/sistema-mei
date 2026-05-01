@@ -46,7 +46,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveCriarReceitaRecebida() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Vendas",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         MovimentacaoRequest request = novoRequest(
             TipoMovimentacao.RECEITA,
             StatusMovimentacao.RECEBIDO,
@@ -75,7 +80,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveLancarExcecaoQuandoReceitaUsarStatusDeDespesa() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Vendas",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         MovimentacaoRequest request = novoRequest(
             TipoMovimentacao.RECEITA,
             StatusMovimentacao.PAGO,
@@ -91,7 +101,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveLancarExcecaoQuandoDespesaUsarStatusDeReceita() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Material", TipoMovimentacao.DESPESA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Material",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         MovimentacaoRequest request = novoRequest(
             TipoMovimentacao.DESPESA,
             StatusMovimentacao.RECEBIDO,
@@ -107,7 +122,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveLancarExcecaoQuandoMovimentacaoPendenteNaoTemVencimento() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Material", TipoMovimentacao.DESPESA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Material",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         MovimentacaoRequest request = novoRequest(
             TipoMovimentacao.DESPESA,
             StatusMovimentacao.A_PAGAR,
@@ -141,7 +161,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveLancarExcecaoQuandoCategoriaTemTipoDiferenteDaMovimentacao() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Material", TipoMovimentacao.DESPESA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Material",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         MovimentacaoRequest request = novoRequest(
             TipoMovimentacao.RECEITA,
             StatusMovimentacao.RECEBIDO,
@@ -157,9 +182,37 @@ class MovimentacaoServiceTest {
     }
 
     @Test
+    void deveLancarExcecaoQuandoCategoriaTemClassificacaoDiferenteDaMovimentacao() {
+        Usuario usuario = novoUsuario();
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Alimentacao",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL
+        );
+        MovimentacaoRequest request = novoRequest(
+            TipoMovimentacao.DESPESA,
+            StatusMovimentacao.PAGO,
+            categoria.getId(),
+            null
+        );
+
+        when(categoriaRepository.findByIdAndUsuario(categoria.getId(), usuario))
+            .thenReturn(Optional.of(categoria));
+
+        assertThrows(BusinessRuleException.class, () -> service.criar(request, usuario));
+        verify(movimentacaoRepository, never()).save(any(Movimentacao.class));
+    }
+
+    @Test
     void deveListarComFiltrosEMapearResponse() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Vendas",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         Movimentacao movimentacao = novaMovimentacao(
             usuario,
             categoria,
@@ -201,8 +254,18 @@ class MovimentacaoServiceTest {
     @Test
     void deveEditarMovimentacaoDoUsuario() {
         Usuario usuario = novoUsuario();
-        Categoria categoriaAntiga = novaCategoria(usuario, "Material", TipoMovimentacao.DESPESA);
-        Categoria categoriaNova = novaCategoria(usuario, "Transporte", TipoMovimentacao.DESPESA);
+        Categoria categoriaAntiga = novaCategoria(
+            usuario,
+            "Material",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
+        Categoria categoriaNova = novaCategoria(
+            usuario,
+            "Transporte",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         Movimentacao movimentacao = novaMovimentacao(
             usuario,
             categoriaAntiga,
@@ -234,7 +297,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveExcluirApenasMovimentacaoDoUsuario() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Vendas",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         Movimentacao movimentacao = novaMovimentacao(
             usuario,
             categoria,
@@ -266,7 +334,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveAtualizarStatus() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Material", TipoMovimentacao.DESPESA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Material",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         Movimentacao movimentacao = novaMovimentacao(
             usuario,
             categoria,
@@ -290,7 +363,12 @@ class MovimentacaoServiceTest {
     @Test
     void deveLancarExcecaoAoAtualizarStatusPendenteSemVencimento() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Vendas",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
         Movimentacao movimentacao = novaMovimentacao(
             usuario,
             categoria,
@@ -323,11 +401,17 @@ class MovimentacaoServiceTest {
         return usuario;
     }
 
-    private Categoria novaCategoria(Usuario usuario, String nome, TipoMovimentacao tipo) {
+    private Categoria novaCategoria(
+        Usuario usuario,
+        String nome,
+        TipoMovimentacao tipo,
+        ClassificacaoFinanceira classificacao
+    ) {
         Categoria categoria = Categoria
             .builder()
             .nome(nome)
             .tipo(tipo)
+            .classificacao(classificacao)
             .padrao(false)
             .usuario(usuario)
             .build();

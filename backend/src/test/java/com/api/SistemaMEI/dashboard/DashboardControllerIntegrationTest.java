@@ -140,6 +140,57 @@ class DashboardControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveRetornarResumoFiltradoPorClassificacao() throws Exception {
+        LocalDate hoje = LocalDate.now();
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        Categoria vendas = salvarCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.EMPRESARIAL);
+        Categoria salario = salvarCategoria(usuario, "Salario", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.PESSOAL);
+        Categoria mercado = salvarCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.PESSOAL);
+
+        salvarMovimentacao(
+            usuario,
+            vendas,
+            BigDecimal.valueOf(1000),
+            hoje,
+            null,
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL,
+            StatusMovimentacao.RECEBIDO,
+            "Venda empresarial"
+        );
+        salvarMovimentacao(
+            usuario,
+            salario,
+            BigDecimal.valueOf(700),
+            hoje,
+            null,
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.PESSOAL,
+            StatusMovimentacao.RECEBIDO,
+            "Receita pessoal"
+        );
+        salvarMovimentacao(
+            usuario,
+            mercado,
+            BigDecimal.valueOf(150),
+            hoje,
+            null,
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            StatusMovimentacao.PAGO,
+            "Despesa pessoal"
+        );
+
+        mockMvc.perform(get("/dashboard/resumo")
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .param("classificacao", "PESSOAL"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.saldoAtual").value(550.0))
+            .andExpect(jsonPath("$.lucroEmpresarialMes").value(550.0))
+            .andExpect(jsonPath("$.vendasHoje").value(700.0));
+    }
+
+    @Test
     void deveListarContasAtrasadasDoUsuarioAutenticado() throws Exception {
         LocalDate hoje = LocalDate.now();
         Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
@@ -211,10 +262,20 @@ class DashboardControllerIntegrationTest extends IntegrationTestBase {
     }
 
     private Categoria salvarCategoria(Usuario usuario, String nome, TipoMovimentacao tipo) {
+        return salvarCategoria(usuario, nome, tipo, ClassificacaoFinanceira.EMPRESARIAL);
+    }
+
+    private Categoria salvarCategoria(
+        Usuario usuario,
+        String nome,
+        TipoMovimentacao tipo,
+        ClassificacaoFinanceira classificacao
+    ) {
         return categoriaRepository.save(Categoria
             .builder()
             .nome(nome)
             .tipo(tipo)
+            .classificacao(classificacao)
             .padrao(false)
             .usuario(usuario)
             .build());

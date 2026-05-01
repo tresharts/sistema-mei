@@ -157,6 +157,32 @@ class MovimentacaoControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveRetornar400QuandoValorUltrapassarTeto() throws Exception {
+        Usuario usuario = salvarUsuario("Maria", "maria@teste.com");
+        Categoria categoria = salvarCategoria(usuario, "Vendas", TipoMovimentacao.RECEITA);
+        String request = """
+            {
+              "valor": 1000000.01,
+              "descricao": "Venda acima do limite",
+              "data": "2026-04-24",
+              "tipo": "RECEITA",
+              "classificacao": "EMPRESARIAL",
+              "status": "RECEBIDO",
+              "categoriaId": "%s"
+            }
+            """.formatted(categoria.getId());
+
+        mockMvc.perform(post("/movimentacoes")
+                .header(HttpHeaders.AUTHORIZATION, bearerToken(usuario))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(request))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.title").value("Dados inválidos"))
+            .andExpect(jsonPath("$.erros[0]").value("valor: Valor deve ser menor ou igual a R$ 1.000.000,00"));
+    }
+
+    @Test
     void deveListarSomenteMovimentacoesDoUsuarioAutenticado() throws Exception {
         Usuario usuarioA = salvarUsuario("Maria", "maria@teste.com");
         Usuario usuarioB = salvarUsuario("Joao", "joao@teste.com");
@@ -328,6 +354,7 @@ class MovimentacaoControllerIntegrationTest extends IntegrationTestBase {
             .builder()
             .nome(nome)
             .tipo(tipo)
+            .classificacao(ClassificacaoFinanceira.EMPRESARIAL)
             .padrao(false)
             .usuario(usuario)
             .build();

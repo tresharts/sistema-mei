@@ -49,15 +49,17 @@ class DashboardServiceTest {
         LocalDate inicioMes = hoje.withDayOfMonth(1);
         LocalDate fimMes = hoje.withDayOfMonth(hoje.lengthOfMonth());
 
-        when(movimentacaoRepository.somaPorUsuarioTipoEStatus(
+        when(movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
             usuario,
             TipoMovimentacao.RECEITA,
-            StatusMovimentacao.RECEBIDO
+            StatusMovimentacao.RECEBIDO,
+            null
         )).thenReturn(BigDecimal.valueOf(1000));
-        when(movimentacaoRepository.somaPorUsuarioTipoEStatus(
+        when(movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
             usuario,
             TipoMovimentacao.DESPESA,
-            StatusMovimentacao.PAGO
+            StatusMovimentacao.PAGO,
+            null
         )).thenReturn(BigDecimal.valueOf(250));
         when(movimentacaoRepository.somaPorUsuarioTipoClassificacaoStatusEPeriodo(
             usuario,
@@ -75,28 +77,31 @@ class DashboardServiceTest {
             inicioMes,
             fimMes
         )).thenReturn(BigDecimal.valueOf(300));
-        when(movimentacaoRepository.somaPorUsuarioTipoEStatus(
-            usuario,
-            TipoMovimentacao.RECEITA,
-            StatusMovimentacao.A_RECEBER
-        )).thenReturn(BigDecimal.valueOf(400));
-        when(movimentacaoRepository.somaPorUsuarioTipoEStatus(
-            usuario,
-            TipoMovimentacao.DESPESA,
-            StatusMovimentacao.A_PAGAR
-        )).thenReturn(BigDecimal.valueOf(120));
-        when(movimentacaoRepository.somaPorUsuarioTipoClassificacaoStatusEPeriodo(
-            usuario,
-            TipoMovimentacao.RECEITA,
-            ClassificacaoFinanceira.EMPRESARIAL,
-            StatusMovimentacao.RECEBIDO,
-            hoje,
-            hoje
-        )).thenReturn(BigDecimal.valueOf(180));
-        when(movimentacaoRepository.countByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+        when(movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
             usuario,
             TipoMovimentacao.RECEITA,
             StatusMovimentacao.A_RECEBER,
+            null
+        )).thenReturn(BigDecimal.valueOf(400));
+        when(movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
+            usuario,
+            TipoMovimentacao.DESPESA,
+            StatusMovimentacao.A_PAGAR,
+            null
+        )).thenReturn(BigDecimal.valueOf(120));
+        when(movimentacaoRepository.somaPorUsuarioTipoStatusClassificacaoEPeriodo(
+            usuario,
+            TipoMovimentacao.RECEITA,
+            StatusMovimentacao.RECEBIDO,
+            ClassificacaoFinanceira.EMPRESARIAL,
+            hoje,
+            hoje
+        )).thenReturn(BigDecimal.valueOf(180));
+        when(movimentacaoRepository.contarAtrasadasPorClassificacao(
+            usuario,
+            TipoMovimentacao.RECEITA,
+            StatusMovimentacao.A_RECEBER,
+            null,
             hoje
         )).thenReturn(2L);
         when(alertaService.listarAlertasAtivos(hoje, 2L))
@@ -109,7 +114,7 @@ class DashboardServiceTest {
                 null
             )));
 
-        ResumoResponse response = service.buscarResumo(usuario);
+        ResumoResponse response = service.buscarResumo(usuario, null);
 
         assertEquals(BigDecimal.valueOf(750), response.saldoAtual());
         assertEquals(BigDecimal.valueOf(600), response.lucroEmpresarialMes());
@@ -139,15 +144,16 @@ class DashboardServiceTest {
             "Venda atrasada"
         );
 
-        when(movimentacaoRepository.findByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+        when(movimentacaoRepository.buscarAtrasadasPorClassificacao(
             usuario,
             TipoMovimentacao.RECEITA,
             StatusMovimentacao.A_RECEBER,
+            null,
             hoje,
             pageable
         )).thenReturn(new PageImpl<>(List.of(movimentacao), pageable, 1));
 
-        Page<ContaAtrasadaResponse> response = service.listarContasAtrasadas(usuario, pageable);
+        Page<ContaAtrasadaResponse> response = service.listarContasAtrasadas(usuario, null, pageable);
 
         assertEquals(1, response.getTotalElements());
         assertEquals(movimentacao.getId(), response.getContent().getFirst().id());
@@ -174,6 +180,7 @@ class DashboardServiceTest {
             .builder()
             .nome(nome)
             .tipo(tipo)
+            .classificacao(ClassificacaoFinanceira.EMPRESARIAL)
             .padrao(false)
             .usuario(usuario)
             .build();
