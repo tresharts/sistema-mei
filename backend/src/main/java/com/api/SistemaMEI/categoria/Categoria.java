@@ -1,6 +1,7 @@
 package com.api.SistemaMEI.categoria;
 
 import com.api.SistemaMEI.common.BaseEntity;
+import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.usuario.Usuario;
 import jakarta.persistence.*;
@@ -21,6 +22,10 @@ public class Categoria extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TipoMovimentacao tipo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ClassificacaoFinanceira classificacao;
 
     @Column(nullable = false)
     private boolean padrao;

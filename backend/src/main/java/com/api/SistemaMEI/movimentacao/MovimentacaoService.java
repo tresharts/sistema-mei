@@ -54,9 +54,17 @@ public class MovimentacaoService {
         }
     }
 
-    private void validarCategoriaMesmoTipo(Categoria categoria, TipoMovimentacao tipo) {
+    private void validarCategoriaCompativel(
+        Categoria categoria,
+        TipoMovimentacao tipo,
+        ClassificacaoFinanceira classificacao
+    ) {
         if (categoria.getTipo() != tipo) {
             throw new BusinessRuleException("Categoria deve ter o mesmo tipo da movimentação");
+        }
+
+        if (categoria.getClassificacao() != classificacao) {
+            throw new BusinessRuleException("Categoria deve ter a mesma classificação da movimentação");
         }
     }
 
@@ -92,7 +100,7 @@ public class MovimentacaoService {
         validarDataVencimento(request.status(), request.dataVencimento());
 
         Categoria categoria = buscarCategoriaDoUsuario(request.categoriaId(), usuario);
-        validarCategoriaMesmoTipo(categoria, request.tipo());
+        validarCategoriaCompativel(categoria, request.tipo(), request.classificacao());
 
         Movimentacao movimentacao = Movimentacao
             .builder()
@@ -144,7 +152,7 @@ public class MovimentacaoService {
         validarDataVencimento(request.status(), request.dataVencimento());
 
         Categoria categoria = buscarCategoriaDoUsuario(request.categoriaId(), usuario);
-        validarCategoriaMesmoTipo(categoria, request.tipo());
+        validarCategoriaCompativel(categoria, request.tipo(), request.classificacao());
 
         movimentacao.setValor(request.valor());
         movimentacao.setDescricao(request.descricao().trim());
