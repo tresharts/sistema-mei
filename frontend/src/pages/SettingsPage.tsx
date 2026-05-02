@@ -13,7 +13,11 @@ import {
   categoriesService,
   type CategoryFormPayload,
 } from "../services/categoriesService";
-import type { ApiTransactionKind, TransactionCategory } from "../types/finance";
+import type {
+  ApiTransactionKind,
+  ApiTransactionScope,
+  TransactionCategory,
+} from "../types/finance";
 
 type ApiErrorResponse = {
   detail?: string;
@@ -38,6 +42,10 @@ function getCategoryGroupLabel(tipo: ApiTransactionKind) {
   return tipo === "RECEITA" ? "Receita" : "Despesa";
 }
 
+function getCategoryScopeLabel(classificacao: ApiTransactionScope) {
+  return classificacao === "EMPRESARIAL" ? "Empresarial" : "Pessoal";
+}
+
 function SettingsPage() {
   const [notifications, setNotifications] = useState(notificationPreferences);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
@@ -54,12 +62,9 @@ function SettingsPage() {
   async function loadCategories() {
     try {
       setIsLoadingCategories(true);
-      const [incomeCategories, expenseCategories] = await Promise.all([
-        categoriesService.getAllCategories("RECEITA"),
-        categoriesService.getAllCategories("DESPESA"),
-      ]);
+      const loadedCategories = await categoriesService.getAllCategories();
 
-      setCategories([...incomeCategories, ...expenseCategories]);
+      setCategories(loadedCategories);
     } catch (error) {
       toast.error("Erro ao carregar categorias.", {
         description: getErrorMessage(error) ?? "Tente novamente em alguns instantes.",
@@ -400,7 +405,7 @@ function CategoryCard({
 
       <p className="mt-3 truncate text-sm font-bold text-on-surface">{category.name}</p>
       <p className="text-xs text-on-surface-variant">
-        {getCategoryGroupLabel(category.tipo)}
+        {getCategoryGroupLabel(category.tipo)} • {getCategoryScopeLabel(category.classificacao)}
       </p>
     </article>
   );
@@ -419,6 +424,9 @@ function CategoryFormModal({
   const [tipo, setTipo] = useState<ApiTransactionKind>(
     modalState.category?.tipo ?? "DESPESA",
   );
+  const [classificacao, setClassificacao] = useState<ApiTransactionScope>(
+    modalState.category?.classificacao ?? "EMPRESARIAL",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const title =
@@ -435,7 +443,7 @@ function CategoryFormModal({
 
     try {
       setIsSubmitting(true);
-      await onSubmit({ nome: trimmedName, tipo });
+      await onSubmit({ nome: trimmedName, tipo, classificacao });
     } finally {
       setIsSubmitting(false);
     }
@@ -510,6 +518,40 @@ function CategoryFormModal({
                 >
                   <AppIcon className="h-4 w-4" name="tag" />
                   Despesa
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-1 text-sm font-medium text-on-surface-variant">
+              Classificação
+            </span>
+            <div className="rounded-2xl bg-surface-container-low p-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  className={
+                    classificacao === "EMPRESARIAL"
+                      ? "flex h-12 items-center justify-center gap-2 rounded-xl bg-primary/10 font-semibold text-primary ring-2 ring-primary/20"
+                      : "flex h-12 items-center justify-center gap-2 rounded-xl font-medium text-on-surface-variant transition hover:bg-surface-container-high"
+                  }
+                  onClick={() => setClassificacao("EMPRESARIAL")}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4" name="briefcase" />
+                  Empresarial
+                </button>
+                <button
+                  className={
+                    classificacao === "PESSOAL"
+                      ? "flex h-12 items-center justify-center gap-2 rounded-xl bg-primary/10 font-semibold text-primary ring-2 ring-primary/20"
+                      : "flex h-12 items-center justify-center gap-2 rounded-xl font-medium text-on-surface-variant transition hover:bg-surface-container-high"
+                  }
+                  onClick={() => setClassificacao("PESSOAL")}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4" name="user" />
+                  Pessoal
                 </button>
               </div>
             </div>

@@ -1,10 +1,15 @@
 import { api } from "../lib/api";
-import type { ApiTransactionKind, TransactionCategory } from "../types/finance";
+import type {
+  ApiTransactionKind,
+  ApiTransactionScope,
+  TransactionCategory,
+} from "../types/finance";
 
 type CategoryResponse = {
   id: string;
   nome: string;
   tipo: ApiTransactionKind;
+  classificacao: ApiTransactionScope;
   padrao: boolean;
 };
 
@@ -17,6 +22,7 @@ function toTransactionCategory(category: CategoryResponse): TransactionCategory 
     id: category.id,
     name: category.nome,
     tipo: category.tipo,
+    classificacao: category.classificacao,
     isDefault: category.padrao,
     icon: category.tipo === "RECEITA" ? "sale" : "tag",
   };
@@ -25,13 +31,15 @@ function toTransactionCategory(category: CategoryResponse): TransactionCategory 
 export type CategoryFormPayload = {
   nome: string;
   tipo: ApiTransactionKind;
+  classificacao: ApiTransactionScope;
 };
 
 export const categoriesService = {
-  async getAllCategories(tipo?: ApiTransactionKind) {
+  async getAllCategories(tipo?: ApiTransactionKind, classificacao?: ApiTransactionScope) {
     const response = await api.get<PageResponse<CategoryResponse>>("/categorias", {
       params: {
         tipo,
+        classificacao,
         size: 100,
         sort: "nome,asc",
       },

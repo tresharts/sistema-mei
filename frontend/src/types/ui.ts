@@ -22,6 +22,8 @@ export type IconName =
   | "chat"
   | "logout"
   | "trash"
+  | "eye"
+  | "eye-off"
   | "briefcase"
   | "user"
   | "sale"

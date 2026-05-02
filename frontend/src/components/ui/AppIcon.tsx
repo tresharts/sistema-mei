@@ -194,6 +194,22 @@ function AppIcon({ className, filled = false, name, ...props }: AppIconProps) {
           <path d="M9 7V4h6v3" />
         </svg>
       );
+    case "eye":
+      return (
+        <svg {...commonProps}>
+          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    case "eye-off":
+      return (
+        <svg {...commonProps}>
+          <path d="M3 3l18 18" />
+          <path d="M10.6 10.6A3 3 0 0 0 13.4 13.4" />
+          <path d="M9.5 5.3A10.8 10.8 0 0 1 12 5c6 0 9.5 7 9.5 7a16.2 16.2 0 0 1-2.1 2.8" />
+          <path d="M6.3 6.8C3.8 8.6 2.5 12 2.5 12s3.5 7 9.5 7a10.4 10.4 0 0 0 4.1-.8" />
+        </svg>
+      );
     case "briefcase":
       return (
         <svg {...commonProps}>

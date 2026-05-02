@@ -3,6 +3,8 @@ import { TransactionFormData } from "../components/transactions/TransactionForm"
 import type { TransactionFiltersData } from "../components/transactions/TransactionFilters";
 import type {
   ApiTransaction,
+  ApiTransactionKind,
+  ApiTransactionScope,
   ApiTransactionStatus,
   TransactionItem,
   TransactionKind,
@@ -14,6 +16,17 @@ type TransactionListParams = TransactionFiltersData & {
   page?: number;
   size?: number;
   sort?: string;
+};
+
+export type UpdateTransactionPayload = {
+  valor: number;
+  descricao: string;
+  data: string;
+  dataVencimento: string | null;
+  tipo: ApiTransactionKind;
+  classificacao: ApiTransactionScope;
+  status: ApiTransactionStatus;
+  categoriaId: string;
 };
 
 const mapToBackend = (data: TransactionFormData) => {
@@ -28,6 +41,16 @@ const mapToBackend = (data: TransactionFormData) => {
     categoriaId: data.categoryId
   };
 };
+
+function compactParams(params?: TransactionListParams) {
+  if (!params) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== "" && value !== undefined),
+  );
+}
 
 const mapStatusToBackend = (kind: "income" | "expense", status: "settled" | "pending") => {
   if (kind === "income") {
@@ -67,6 +90,7 @@ export function toTransactionItem(transaction: ApiTransaction): TransactionItem 
     kind,
     scope,
     scopeLabel: scope === "business" ? "Empresarial" : "Pessoal",
+    categoryId: transaction.categoriaId,
     category: transaction.categoriaNome,
     status: mapStatusFromBackend(transaction.status),
     statusLabel: mapStatusLabelFromBackend(transaction.status),
@@ -89,7 +113,7 @@ export const transactionService = {
     const response = await api.get<{ 
       content?: ApiTransaction[], 
       totalPages: number 
-      }> ("/movimentacoes", { params });
+      }> ("/movimentacoes", { params: compactParams(params) });
 
     return{
       transactions: (response.data.content ?? []).map(toTransactionItem),
@@ -101,21 +125,10 @@ export const transactionService = {
     await api.delete(`/movimentacoes/${id}`);
   },
   
- async updateTransaction(id: string, data: any): Promise<TransactionItem> {
-  const payload = {
-    valor: data.valor,
-    descricao: data.descricao,
-    data: data.data,
-    dataVencimento: data.dataVencimento || null, // Importante para o backend
-    tipo: data.tipo,           // Deve ser "RECEITA" ou "DESPESA"
-    classificacao: data.classificacao, // Deve ser "EMPRESARIAL" ou "PESSOAL"
-    status: data.status,       // Deve ser "PAGO", "A_PAGAR", etc.
-    categoriaId: data.categoriaId // DEVE SER O UUID DA CATEGORIA[cite: 13]
-  };
-
-  const response = await api.put<ApiTransaction>(`/movimentacoes/${id}`, payload);
-  return toTransactionItem(response.data);
-},
+  async updateTransaction(id: string, data: UpdateTransactionPayload): Promise<TransactionItem> {
+    const response = await api.put<ApiTransaction>(`/movimentacoes/${id}`, data);
+    return toTransactionItem(response.data);
+  },
 
   async updateStatus(id: string, status: ApiTransactionStatus){
     const response = await api.patch<ApiTransaction>(`/movimentacoes/${id}/status`, { status});

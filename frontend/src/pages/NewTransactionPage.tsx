@@ -35,13 +35,10 @@ function NewTransactionPage() {
     async function loadCategories() {
       try {
         setIsLoadingCategories(true);
-        const [incomeCategories, expenseCategories] = await Promise.all([
-          categoriesService.getAllCategories("RECEITA"),
-          categoriesService.getAllCategories("DESPESA"),
-        ]);
+        const loadedCategories = await categoriesService.getAllCategories();
 
         if (shouldUpdate) {
-          setCategories([...incomeCategories, ...expenseCategories]);
+          setCategories(loadedCategories);
         }
       } catch (error) {
         toast.error("Erro ao carregar categorias.", {

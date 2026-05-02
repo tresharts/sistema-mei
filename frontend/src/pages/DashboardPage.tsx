@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AppIcon from "../components/ui/AppIcon";
+import { cn } from "../lib/cn";
 import { ROUTE_PATHS } from "../lib/constants";
 import { formatCurrencyBRL, formatShortDate, getSignedAmount } from "../lib/format";
 import { dashboardService } from "../services/dashboardService";
 import { transactionService } from "../services/transactionsServices";
 import type {
+  ApiTransactionScope,
   DashboardAlert,
   DashboardSummary,
   OverdueAccount,
@@ -22,12 +24,24 @@ const emptySummary: DashboardSummary = {
   alertas: [],
 };
 
+const DASHBOARD_PRIVACY_STORAGE_KEY = "sistema-mei.dashboard.hide-values";
+const hiddenCurrencyLabel = "R$ ••••••";
+
 function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary>(emptySummary);
   const [overdueAccounts, setOverdueAccounts] = useState<OverdueAccount[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<TransactionItem[]>([]);
+  const [selectedScope, setSelectedScope] = useState<ApiTransactionScope>("EMPRESARIAL");
+  const [transitionDirection, setTransitionDirection] = useState<"left" | "right">("right");
+  const [hideValues, setHideValues] = useState(
+    () => localStorage.getItem(DASHBOARD_PRIVACY_STORAGE_KEY) === "true",
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(DASHBOARD_PRIVACY_STORAGE_KEY, String(hideValues));
+  }, [hideValues]);
 
   useEffect(() => {
     let shouldUpdate = true;
@@ -38,9 +52,10 @@ function DashboardPage() {
         setErrorMessage(null);
 
         const [summaryData, overdueData, recentData] = await Promise.all([
-          dashboardService.getSummary(),
-          dashboardService.getOverdueAccounts(5),
+          dashboardService.getSummary(selectedScope),
+          dashboardService.getOverdueAccounts(5, selectedScope),
           transactionService.getAllTransactions({
+            classificacao: selectedScope,
             page: 0,
             size: 3,
             sort: "data,desc",
@@ -70,28 +85,101 @@ function DashboardPage() {
     return () => {
       shouldUpdate = false;
     };
-  }, []);
+  }, [selectedScope]);
+
+  const formatDashboardCurrency = (value: number) =>
+    hideValues ? hiddenCurrencyLabel : formatCurrencyBRL(value);
+
+  const formatDashboardSignedAmount = (transaction: TransactionItem) =>
+    hideValues ? hiddenCurrencyLabel : getSignedAmount(transaction.kind, transaction.amount);
+
+  const handleScopeChange = (scope: ApiTransactionScope) => {
+    if (scope === selectedScope) {
+      return;
+    }
+
+    setTransitionDirection(scope === "PESSOAL" ? "right" : "left");
+    setSelectedScope(scope);
+  };
 
   return (
     <div className="space-y-8">
-      <section className="overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-xl shadow-primary/10 lg:p-8">
+      <div className="relative grid grid-cols-2 gap-2 overflow-hidden rounded-2xl bg-surface-container-low p-1.5">
+        <span
+          className={cn(
+            "absolute inset-y-1.5 left-1.5 w-[calc(50%-0.375rem)] rounded-xl bg-surface-container-lowest shadow-sm ring-1 ring-primary/10 transition-transform duration-300 ease-out",
+            selectedScope === "PESSOAL" && "translate-x-[calc(100%+0.5rem)]",
+          )}
+        />
+        {[
+          { label: "Empresarial", value: "EMPRESARIAL" },
+          { label: "Pessoal", value: "PESSOAL" },
+        ].map((option) => {
+          const isSelected = selectedScope === option.value;
+
+          return (
+            <button
+              key={option.value}
+              className={cn(
+                "relative z-10 flex h-11 items-center justify-center rounded-xl text-sm transition-colors duration-300 ease-out",
+                isSelected
+                  ? "font-bold text-primary"
+                  : "font-medium text-on-surface-variant hover:text-on-surface",
+              )}
+              onClick={() => handleScopeChange(option.value as ApiTransactionScope)}
+              type="button"
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div
+        key={selectedScope}
+        className={cn(
+          "space-y-8 animate-in fade-in duration-300",
+          transitionDirection === "right"
+            ? "slide-in-from-right-5"
+            : "slide-in-from-left-5",
+        )}
+      >
+      <section className="overflow-hidden rounded-2xl bg-primary p-6 text-on-primary shadow-xl shadow-primary/10 transition-all duration-300 lg:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium opacity-90">Saldo atual</p>
+            <p className="text-sm font-medium opacity-90">
+              Saldo {selectedScope === "EMPRESARIAL" ? "empresarial" : "pessoal"}
+            </p>
             <h2 className="mt-2 break-words font-headline text-4xl font-extrabold tracking-tight">
-              {isLoading ? "..." : formatCurrencyBRL(summary.saldoAtual)}
+              {isLoading ? (
+                <span className="skeleton-nu-on-primary block h-11 w-56 max-w-full rounded-xl" />
+              ) : (
+                formatDashboardCurrency(summary.saldoAtual)
+              )}
             </h2>
           </div>
 
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
-            <AppIcon className="h-5 w-5" name="wallet" />
-          </div>
+          <button
+            aria-label={hideValues ? "Mostrar valores" : "Ocultar valores"}
+            aria-pressed={hideValues}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/15"
+            onClick={() => setHideValues((current) => !current)}
+            type="button"
+          >
+            <AppIcon className="h-5 w-5" name={hideValues ? "eye-off" : "eye"} />
+          </button>
         </div>
 
         <div className="mt-5 rounded-xl bg-white/10 p-3">
-          <p className="text-xs opacity-80">Lucro empresarial do mes</p>
+          <p className="text-xs opacity-80">
+            {selectedScope === "EMPRESARIAL" ? "Lucro empresarial do mes" : "Resultado pessoal do mes"}
+          </p>
           <p className="mt-1 font-headline text-xl font-bold">
-            {isLoading ? "..." : formatCurrencyBRL(summary.lucroEmpresarialMes)}
+            {isLoading ? (
+              <span className="skeleton-nu-on-primary block h-7 w-40 rounded-lg" />
+            ) : (
+              formatDashboardCurrency(summary.lucroEmpresarialMes)
+            )}
           </p>
         </div>
       </section>
@@ -110,6 +198,7 @@ function DashboardPage() {
           helperText="Vendas recebidas hoje"
           tone="secondary"
           isLoading={isLoading}
+          hideValue={hideValues}
         />
         <MetricCard
           icon="wallet"
@@ -118,6 +207,7 @@ function DashboardPage() {
           helperText="Valores pendentes"
           tone="neutral"
           isLoading={isLoading}
+          hideValue={hideValues}
         />
         <MetricCard
           icon="receipt"
@@ -126,6 +216,7 @@ function DashboardPage() {
           helperText="Contas pendentes"
           tone="danger"
           isLoading={isLoading}
+          hideValue={hideValues}
         />
         <MetricCard
           icon="bell"
@@ -135,6 +226,7 @@ function DashboardPage() {
           tone="tertiary"
           isCurrency={false}
           isLoading={isLoading}
+          hideValue={false}
         />
       </section>
 
@@ -170,7 +262,7 @@ function DashboardPage() {
                     </p>
                   </div>
                   <p className="shrink-0 text-right text-sm font-bold text-error">
-                    {formatCurrencyBRL(account.valor)}
+                    {formatDashboardCurrency(account.valor)}
                   </p>
                 </div>
                 <p className="mt-2 text-xs font-medium text-error">
@@ -235,7 +327,7 @@ function DashboardPage() {
                       : "text-sm font-bold text-error"
                   }
                 >
-                  {getSignedAmount(transaction.kind, transaction.amount)}
+                  {formatDashboardSignedAmount(transaction)}
                 </p>
                 <p className="text-xs text-on-surface-variant">
                   {transaction.statusLabel}
@@ -251,6 +343,7 @@ function DashboardPage() {
         )}
       </section>
       </div>
+      </div>
     </div>
   );
 }
@@ -263,9 +356,11 @@ type MetricCardProps = {
   tone: "secondary" | "neutral" | "danger" | "tertiary";
   isCurrency?: boolean;
   isLoading: boolean;
+  hideValue?: boolean;
 };
 
 function MetricCard({
+  hideValue = false,
   helperText,
   icon,
   isCurrency = true,
@@ -290,7 +385,13 @@ function MetricCard({
       <div>
         <p className="text-xs text-on-surface-variant">{label}</p>
         <p className="mt-1 break-words font-headline text-lg font-bold text-on-surface">
-          {isLoading ? "..." : isCurrency ? formatCurrencyBRL(value) : value}
+          {isLoading ? (
+            <span className="skeleton-nu block h-6 w-24 rounded-lg" />
+          ) : isCurrency && hideValue
+              ? hiddenCurrencyLabel
+              : isCurrency
+                ? formatCurrencyBRL(value)
+                : value}
         </p>
         <p className="mt-1 text-xs leading-4 text-on-surface-variant">{helperText}</p>
       </div>
@@ -356,7 +457,7 @@ function DashboardSkeleton({ rows }: { rows: number }) {
       {Array.from({ length: rows }).map((_, index) => (
         <div
           key={index}
-          className="h-20 animate-pulse rounded-xl bg-surface-container-low"
+          className="skeleton-nu h-20 rounded-xl"
         />
       ))}
     </div>

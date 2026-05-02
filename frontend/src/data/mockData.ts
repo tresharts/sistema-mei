@@ -59,6 +59,7 @@ export const recentTransactions: TransactionItem[] = [
     kind: "income",
     scope: "business",
     scopeLabel: "Empresarial",
+    categoryId: "cat-4",
     category: "Venda Direta",
     status: "settled",
     statusLabel: "Recebido",
@@ -75,6 +76,7 @@ export const recentTransactions: TransactionItem[] = [
     kind: "expense",
     scope: "business",
     scopeLabel: "Empresarial",
+    categoryId: "cat-2",
     category: "Fornecedor",
     status: "pending",
     statusLabel: "A pagar",
@@ -91,6 +93,7 @@ export const recentTransactions: TransactionItem[] = [
     kind: "income",
     scope: "business",
     scopeLabel: "Empresarial",
+    categoryId: "cat-4",
     category: "Reserva",
     status: "settled",
     statusLabel: "Recebido",
@@ -115,6 +118,7 @@ export const historyGroups: HistoryGroup[] = [
         kind: "income",
         scope: "business",
         scopeLabel: "Empresarial",
+        categoryId: "cat-4",
         category: "Venda Direta",
         status: "settled",
         statusLabel: "Recebido",
@@ -131,6 +135,7 @@ export const historyGroups: HistoryGroup[] = [
         kind: "expense",
         scope: "business",
         scopeLabel: "Empresarial",
+        categoryId: "cat-1",
         category: "Fornecedor",
         status: "pending",
         statusLabel: "A pagar",
@@ -154,6 +159,7 @@ export const historyGroups: HistoryGroup[] = [
         kind: "expense",
         scope: "personal",
         scopeLabel: "Pessoal",
+        categoryId: "cat-5",
         category: "Lazer",
         status: "settled",
         statusLabel: "Pago",
@@ -170,6 +176,7 @@ export const historyGroups: HistoryGroup[] = [
         kind: "income",
         scope: "business",
         scopeLabel: "Empresarial",
+        categoryId: "cat-4",
         category: "Reserva",
         status: "settled",
         statusLabel: "Recebido",
@@ -184,10 +191,11 @@ export const historyGroups: HistoryGroup[] = [
 ];
 
 export const transactionCategories: TransactionCategory[] = [
-  { id: "cat-1", name: "Material", tipo: "DESPESA", isDefault: true, icon: "box" },
-  { id: "cat-2", name: "Frete", tipo: "DESPESA", isDefault: true, icon: "briefcase" },
-  { id: "cat-3", name: "Embalagem", tipo: "DESPESA", isDefault: true, icon: "tag" },
-  { id: "cat-4", name: "Venda", tipo: "RECEITA", isDefault: true, icon: "sale" },
+  { id: "cat-1", name: "Material", tipo: "DESPESA", classificacao: "EMPRESARIAL", isDefault: true, icon: "box" },
+  { id: "cat-2", name: "Frete", tipo: "DESPESA", classificacao: "EMPRESARIAL", isDefault: true, icon: "briefcase" },
+  { id: "cat-3", name: "Embalagem", tipo: "DESPESA", classificacao: "EMPRESARIAL", isDefault: true, icon: "tag" },
+  { id: "cat-4", name: "Venda", tipo: "RECEITA", classificacao: "EMPRESARIAL", isDefault: true, icon: "sale" },
+  { id: "cat-5", name: "Lazer", tipo: "DESPESA", classificacao: "PESSOAL", isDefault: true, icon: "wallet" },
 ];
 
 export const settingsCategories: SettingsCategory[] = [

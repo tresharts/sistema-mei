@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes } from "react";
+import { forwardRef, useId, type InputHTMLAttributes } from "react";
 import { cn } from "../../lib/cn";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -7,14 +7,26 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, ...props }, ref) => {
+  ({ className, error, id, label, ...props }, ref) => {
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+
     return (
       <div className="w-full space-y-1.5">
+        {label ? (
+          <label
+            className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm"
+            htmlFor={inputId}
+          >
+            {label}
+          </label>
+        ) : null}
         <input
+          id={inputId}
           ref={ref} 
           className={cn(
             "min-h-14 w-full rounded-xl border-none bg-surface-container-low px-4 text-sm text-on-surface placeholder:text-outline-variant focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/15 transition-all",
-            error && "ring-2 ring-error/50 bg-error/5", // Estilo de erro
+            error && "ring-2 ring-error/50 bg-error/5",
             className
           )}
           {...props}

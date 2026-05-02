@@ -38,11 +38,13 @@ function AppShell() {
         <TopAppBar title={title} variant={headerVariant} />
 
         <main
-          className={
+          className={cn(
+            "relative z-10 mx-auto w-full px-6",
             isNewTransaction
-              ? "relative z-10 mx-auto w-full px-6 pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
-              : "relative z-10 mx-auto w-full px-6 pb-32 pt-24 lg:max-w-3xl lg:px-8 lg:pb-8"
-          }
+              ? "pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
+              : "pb-32 pt-24 lg:px-8 lg:pb-8",
+            isHistory ? "lg:max-w-[64rem]" : !isNewTransaction && "lg:max-w-3xl",
+          )}
         >
           <Outlet />
         </main>
