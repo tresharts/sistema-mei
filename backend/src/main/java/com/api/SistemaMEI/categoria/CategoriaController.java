@@ -1,5 +1,6 @@
 package com.api.SistemaMEI.categoria;
 
+import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.usuario.Usuario;
 import jakarta.validation.Valid;
@@ -24,9 +25,10 @@ public class CategoriaController {
     public ResponseEntity<Page<CategoriaResponse>> listar(
         @AuthenticationPrincipal Usuario usuario,
         @RequestParam(required = false) TipoMovimentacao tipo,
+        @RequestParam(required = false) ClassificacaoFinanceira classificacao,
         @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(service.listar(usuario, tipo, pageable));
+        return ResponseEntity.ok(service.listar(usuario, tipo, classificacao, pageable));
     }
 
     @PostMapping

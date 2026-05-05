@@ -3,6 +3,7 @@ package com.api.SistemaMEI.movimentacao;
 import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.StatusMovimentacao;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +17,7 @@ public record MovimentacaoRequest(
 
     @NotNull(message = "Valor é obrigatório")
     @DecimalMin(value = "0.01", message = "Valor deve ser maior que zero")
+    @DecimalMax(value = "1000000.00", message = "Valor deve ser menor ou igual a R$ 1.000.000,00")
     BigDecimal valor,
 
     @NotBlank(message = "Descrição é obrigatória")

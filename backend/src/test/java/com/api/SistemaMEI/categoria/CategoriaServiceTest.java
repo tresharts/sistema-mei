@@ -2,6 +2,7 @@ package com.api.SistemaMEI.categoria;
 
 import com.api.SistemaMEI.exception.BusinessRuleException;
 import com.api.SistemaMEI.exception.ResourceNotFoundException;
+import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.usuario.Usuario;
 import org.junit.jupiter.api.Test;
@@ -49,21 +50,73 @@ class CategoriaServiceTest {
             .stream(categoriasCaptor.getValue().spliterator(), false)
             .toList();
 
-        assertEquals(5, categorias.size());
+        assertEquals(11, categorias.size());
         assertTrue(categorias.stream().allMatch(Categoria::isPadrao));
         assertTrue(categorias.stream().allMatch(categoria -> categoria.getUsuario().equals(usuario)));
         assertEquals(
-            List.of("Vendas", "Servicos", "Material", "Transporte", "Embalagem"),
+            List.of(
+                "Vendas",
+                "Servicos",
+                "Material",
+                "Transporte",
+                "Embalagem",
+                "Salario",
+                "Freelance",
+                "Alimentacao",
+                "Moradia",
+                "Saude",
+                "Lazer"
+            ),
             categorias.stream().map(Categoria::getNome).toList()
         );
+        assertEquals(5, categorias.stream()
+            .filter(categoria -> categoria.getClassificacao() == ClassificacaoFinanceira.EMPRESARIAL)
+            .count());
+        assertEquals(6, categorias.stream()
+            .filter(categoria -> categoria.getClassificacao() == ClassificacaoFinanceira.PESSOAL)
+            .count());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void naoDeveDuplicarCategoriasPadraoJaExistentes() {
+        Usuario usuario = novoUsuario();
+        ArgumentCaptor<Iterable<Categoria>> categoriasCaptor = ArgumentCaptor.forClass(Iterable.class);
+
+        when(repository.existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(
+            usuario,
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL,
+            "Vendas"
+        )).thenReturn(true);
+
+        service.criarCategoriasPadrao(usuario);
+
+        verify(repository).saveAll(categoriasCaptor.capture());
+
+        List<Categoria> categorias = StreamSupport
+            .stream(categoriasCaptor.getValue().spliterator(), false)
+            .toList();
+
+        assertEquals(10, categorias.size());
+        assertFalse(categorias.stream().anyMatch(categoria -> categoria.getNome().equals("Vendas")));
     }
 
     @Test
     void deveCriarCategoriaComPadraoFalse() {
         Usuario usuario = novoUsuario();
-        CategoriaRequest request = new CategoriaRequest("  Mercado  ", TipoMovimentacao.DESPESA);
+        CategoriaRequest request = new CategoriaRequest(
+            "  Mercado  ",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL
+        );
 
-        when(repository.existsByUsuarioAndTipoAndNomeIgnoreCase(usuario, TipoMovimentacao.DESPESA, "Mercado"))
+        when(repository.existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(
+            usuario,
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            "Mercado"
+        ))
             .thenReturn(false);
         when(repository.save(any(Categoria.class))).thenAnswer(invocation -> {
             Categoria categoria = invocation.getArgument(0);
@@ -76,15 +129,25 @@ class CategoriaServiceTest {
         assertNotNull(response.id());
         assertEquals("Mercado", response.nome());
         assertEquals(TipoMovimentacao.DESPESA, response.tipo());
+        assertEquals(ClassificacaoFinanceira.PESSOAL, response.classificacao());
         assertFalse(response.padrao());
     }
 
     @Test
     void deveLancarExcecaoQuandoCriarCategoriaDuplicada() {
         Usuario usuario = novoUsuario();
-        CategoriaRequest request = new CategoriaRequest("Mercado", TipoMovimentacao.DESPESA);
+        CategoriaRequest request = new CategoriaRequest(
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL
+        );
 
-        when(repository.existsByUsuarioAndTipoAndNomeIgnoreCase(usuario, TipoMovimentacao.DESPESA, "Mercado"))
+        when(repository.existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(
+            usuario,
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            "Mercado"
+        ))
             .thenReturn(true);
 
         assertThrows(BusinessRuleException.class, () -> service.criar(request, usuario));
@@ -94,8 +157,18 @@ class CategoriaServiceTest {
     @Test
     void naoDeveValidarDuplicidadeQuandoNomeETipoNaoMudamNaEdicao() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
-        CategoriaRequest request = new CategoriaRequest("  mercado  ", TipoMovimentacao.DESPESA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            false
+        );
+        CategoriaRequest request = new CategoriaRequest(
+            "  mercado  ",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL
+        );
 
         when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
         when(repository.save(categoria)).thenReturn(categoria);
@@ -103,17 +176,32 @@ class CategoriaServiceTest {
         CategoriaResponse response = service.editar(categoria.getId(), request, usuario);
 
         assertEquals("mercado", response.nome());
-        verify(repository, never()).existsByUsuarioAndTipoAndNomeIgnoreCase(any(), any(), any());
+        verify(repository, never()).existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(any(), any(), any(), any());
     }
 
     @Test
     void deveLancarExcecaoQuandoEditarCategoriaComNomeDuplicado() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Mercado", TipoMovimentacao.DESPESA, false);
-        CategoriaRequest request = new CategoriaRequest("Alimentacao", TipoMovimentacao.DESPESA);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            false
+        );
+        CategoriaRequest request = new CategoriaRequest(
+            "Alimentacao",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL
+        );
 
         when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
-        when(repository.existsByUsuarioAndTipoAndNomeIgnoreCase(usuario, TipoMovimentacao.DESPESA, "Alimentacao"))
+        when(repository.existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(
+            usuario,
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            "Alimentacao"
+        ))
             .thenReturn(true);
 
         assertThrows(BusinessRuleException.class, () -> service.editar(categoria.getId(), request, usuario));
@@ -123,7 +211,13 @@ class CategoriaServiceTest {
     @Test
     void deveLancarExcecaoQuandoExcluirCategoriaPadrao() {
         Usuario usuario = novoUsuario();
-        Categoria categoria = novaCategoria(usuario, "Material", TipoMovimentacao.DESPESA, true);
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Material",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.EMPRESARIAL,
+            true
+        );
 
         when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
 
@@ -157,12 +251,14 @@ class CategoriaServiceTest {
         Usuario usuario,
         String nome,
         TipoMovimentacao tipo,
+        ClassificacaoFinanceira classificacao,
         boolean padrao
     ) {
         Categoria categoria = Categoria
             .builder()
             .nome(nome)
             .tipo(tipo)
+            .classificacao(classificacao)
             .padrao(padrao)
             .usuario(usuario)
             .build();

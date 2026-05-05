@@ -97,9 +97,25 @@ export const transactionService = {
     };
   },
 
-  async deleteTransaction(id: string) {
+  async deleteTransaction(id: string) : Promise<void> {
     await api.delete(`/movimentacoes/${id}`);
   },
+  
+ async updateTransaction(id: string, data: any): Promise<TransactionItem> {
+  const payload = {
+    valor: data.valor,
+    descricao: data.descricao,
+    data: data.data,
+    dataVencimento: data.dataVencimento || null, // Importante para o backend
+    tipo: data.tipo,           // Deve ser "RECEITA" ou "DESPESA"
+    classificacao: data.classificacao, // Deve ser "EMPRESARIAL" ou "PESSOAL"
+    status: data.status,       // Deve ser "PAGO", "A_PAGAR", etc.
+    categoriaId: data.categoriaId // DEVE SER O UUID DA CATEGORIA[cite: 13]
+  };
+
+  const response = await api.put<ApiTransaction>(`/movimentacoes/${id}`, payload);
+  return toTransactionItem(response.data);
+},
 
   async updateStatus(id: string, status: ApiTransactionStatus){
     const response = await api.patch<ApiTransaction>(`/movimentacoes/${id}/status`, { status});

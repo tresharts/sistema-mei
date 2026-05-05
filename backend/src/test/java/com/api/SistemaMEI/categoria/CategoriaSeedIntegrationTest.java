@@ -3,6 +3,7 @@ package com.api.SistemaMEI.categoria;
 import com.api.SistemaMEI.IntegrationTestBase;
 import com.api.SistemaMEI.auth.RefreshTokenRepository;
 import com.api.SistemaMEI.auth.RegisterRequest;
+import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.usuario.Usuario;
 import com.api.SistemaMEI.usuario.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,11 +59,29 @@ class CategoriaSeedIntegrationTest extends IntegrationTestBase {
         Usuario usuario = usuarioRepository.findByEmail("maria@teste.com").orElseThrow();
         List<Categoria> categorias = categoriaRepository.findByUsuario(usuario, Pageable.unpaged()).getContent();
 
-        assertEquals(5, categorias.size());
+        assertEquals(11, categorias.size());
         assertTrue(categorias.stream().allMatch(Categoria::isPadrao));
         assertEquals(
-            List.of("Embalagem", "Material", "Servicos", "Transporte", "Vendas"),
+            List.of(
+                "Alimentacao",
+                "Embalagem",
+                "Freelance",
+                "Lazer",
+                "Material",
+                "Moradia",
+                "Salario",
+                "Saude",
+                "Servicos",
+                "Transporte",
+                "Vendas"
+            ),
             categorias.stream().map(Categoria::getNome).sorted().toList()
         );
+        assertEquals(5, categorias.stream()
+            .filter(categoria -> categoria.getClassificacao() == ClassificacaoFinanceira.EMPRESARIAL)
+            .count());
+        assertEquals(6, categorias.stream()
+            .filter(categoria -> categoria.getClassificacao() == ClassificacaoFinanceira.PESSOAL)
+            .count());
     }
 }

@@ -1,5 +1,6 @@
 package com.api.SistemaMEI.categoria;
 
+import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,5 +13,8 @@ public record CategoriaRequest(
     String nome,
 
     @NotNull(message = "Tipo é obrigatório")
-    TipoMovimentacao tipo
+    TipoMovimentacao tipo,
+
+    @NotNull(message = "Classificação é obrigatória")
+    ClassificacaoFinanceira classificacao
 ) {}

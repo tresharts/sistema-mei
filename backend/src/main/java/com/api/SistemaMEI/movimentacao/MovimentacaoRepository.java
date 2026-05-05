@@ -47,11 +47,13 @@ public interface MovimentacaoRepository extends JpaRepository<Movimentacao, UUID
         WHERE m.usuario = :usuario
         AND m.tipo = :tipo
         AND m.status = :status
+        AND (:classificacao IS NULL OR m.classificacao = :classificacao)
     """)
-    BigDecimal somaPorUsuarioTipoEStatus(
+    BigDecimal somaPorUsuarioTipoStatusEClassificacao(
         @Param("usuario") Usuario usuario,
         @Param("tipo") TipoMovimentacao tipo,
-        @Param("status") StatusMovimentacao status
+        @Param("status") StatusMovimentacao status,
+        @Param("classificacao") ClassificacaoFinanceira classificacao
     );
 
     @Query("""
@@ -60,13 +62,15 @@ public interface MovimentacaoRepository extends JpaRepository<Movimentacao, UUID
         WHERE m.usuario = :usuario
         AND m.tipo = :tipo
         AND m.status = :status
+        AND (:classificacao IS NULL OR m.classificacao = :classificacao)
         AND m.data >= :dataInicio
         AND m.data <= :dataFim
     """)
-    BigDecimal somaPorUsuarioTipoStatusEPeriodo(
+    BigDecimal somaPorUsuarioTipoStatusClassificacaoEPeriodo(
         @Param("usuario") Usuario usuario,
         @Param("tipo") TipoMovimentacao tipo,
         @Param("status") StatusMovimentacao status,
+        @Param("classificacao") ClassificacaoFinanceira classificacao,
         @Param("dataInicio") LocalDate dataInicio,
         @Param("dataFim") LocalDate dataFim
     );
@@ -90,17 +94,37 @@ public interface MovimentacaoRepository extends JpaRepository<Movimentacao, UUID
         @Param("dataFim") LocalDate dataFim
     );
 
-    long countByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+    @Query("""
+        SELECT COUNT(m)
+        FROM Movimentacao m
+        WHERE m.usuario = :usuario
+        AND m.tipo = :tipo
+        AND m.status = :status
+        AND (:classificacao IS NULL OR m.classificacao = :classificacao)
+        AND m.dataVencimento < :dataVencimento
+    """)
+    long contarAtrasadasPorClassificacao(
         Usuario usuario,
         TipoMovimentacao tipo,
         StatusMovimentacao status,
+        ClassificacaoFinanceira classificacao,
         LocalDate dataVencimento
     );
 
-    Page<Movimentacao> findByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+    @Query("""
+        SELECT m
+        FROM Movimentacao m
+        WHERE m.usuario = :usuario
+        AND m.tipo = :tipo
+        AND m.status = :status
+        AND (:classificacao IS NULL OR m.classificacao = :classificacao)
+        AND m.dataVencimento < :dataVencimento
+    """)
+    Page<Movimentacao> buscarAtrasadasPorClassificacao(
         Usuario usuario,
         TipoMovimentacao tipo,
         StatusMovimentacao status,
+        ClassificacaoFinanceira classificacao,
         LocalDate dataVencimento,
         Pageable pageable
     );

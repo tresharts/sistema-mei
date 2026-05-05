@@ -25,40 +25,48 @@ public class DashboardService {
     private final AlertaService alertaService;
 
     @Transactional(readOnly = true)
-    public ResumoResponse buscarResumo(Usuario usuario) {
+    public ResumoResponse buscarResumo(Usuario usuario, ClassificacaoFinanceira classificacao) {
         LocalDate hoje = LocalDate.now();
         LocalDate inicioMes = hoje.withDayOfMonth(1);
         LocalDate fimMes = hoje.withDayOfMonth(hoje.lengthOfMonth());
 
-        BigDecimal saldoAtual = calcularSaldoAtual(usuario);
-        BigDecimal lucroEmpresarialMes = calcularLucroEmpresarialMes(usuario, inicioMes, fimMes);
-
-        BigDecimal totalAReceber = movimentacaoRepository.somaPorUsuarioTipoEStatus(
+        BigDecimal saldoAtual = calcularSaldoAtual(usuario, classificacao);
+        BigDecimal lucroEmpresarialMes = calcularLucroPorClassificacaoMes(
             usuario,
-            TipoMovimentacao.RECEITA,
-            StatusMovimentacao.A_RECEBER
+            classificacao != null ? classificacao : ClassificacaoFinanceira.EMPRESARIAL,
+            inicioMes,
+            fimMes
         );
 
-        BigDecimal totalAPagar = movimentacaoRepository.somaPorUsuarioTipoEStatus(
+        BigDecimal totalAReceber = movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
+            usuario,
+            TipoMovimentacao.RECEITA,
+            StatusMovimentacao.A_RECEBER,
+            classificacao
+        );
+
+        BigDecimal totalAPagar = movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
             usuario,
             TipoMovimentacao.DESPESA,
-            StatusMovimentacao.A_PAGAR
+            StatusMovimentacao.A_PAGAR,
+            classificacao
         );
 
-        BigDecimal vendasHoje = movimentacaoRepository.somaPorUsuarioTipoClassificacaoStatusEPeriodo(
+        BigDecimal vendasHoje = movimentacaoRepository.somaPorUsuarioTipoStatusClassificacaoEPeriodo(
             usuario,
             TipoMovimentacao.RECEITA,
-            ClassificacaoFinanceira.EMPRESARIAL,
             StatusMovimentacao.RECEBIDO,
+            classificacao != null ? classificacao : ClassificacaoFinanceira.EMPRESARIAL,
             hoje,
             hoje
         );
 
         long quantidadeContasAReceberAtrasadas =
-            movimentacaoRepository.countByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+            movimentacaoRepository.contarAtrasadasPorClassificacao(
                 usuario,
                 TipoMovimentacao.RECEITA,
                 StatusMovimentacao.A_RECEBER,
+                classificacao,
                 hoje
             );
 
@@ -74,62 +82,70 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContaAtrasadaResponse> listarContasAtrasadas(Usuario usuario, Pageable pageable) {
+    public Page<ContaAtrasadaResponse> listarContasAtrasadas(
+        Usuario usuario,
+        ClassificacaoFinanceira classificacao,
+        Pageable pageable
+    ) {
         LocalDate hoje = LocalDate.now();
 
         return movimentacaoRepository
-            .findByUsuarioAndTipoAndStatusAndDataVencimentoBefore(
+            .buscarAtrasadasPorClassificacao(
                 usuario,
                 TipoMovimentacao.RECEITA,
                 StatusMovimentacao.A_RECEBER,
+                classificacao,
                 hoje,
                 pageable
             )
             .map(movimentacao -> toContaAtrasadaResponse(movimentacao, hoje));
     }
 
-    private BigDecimal calcularSaldoAtual(Usuario usuario) {
-        BigDecimal receitasRecebidas = movimentacaoRepository.somaPorUsuarioTipoEStatus(
+    private BigDecimal calcularSaldoAtual(Usuario usuario, ClassificacaoFinanceira classificacao) {
+        BigDecimal receitasRecebidas = movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
             usuario,
             TipoMovimentacao.RECEITA,
-            StatusMovimentacao.RECEBIDO
+            StatusMovimentacao.RECEBIDO,
+            classificacao
         );
 
-        BigDecimal despesasPagas = movimentacaoRepository.somaPorUsuarioTipoEStatus(
+        BigDecimal despesasPagas = movimentacaoRepository.somaPorUsuarioTipoStatusEClassificacao(
             usuario,
             TipoMovimentacao.DESPESA,
-            StatusMovimentacao.PAGO
+            StatusMovimentacao.PAGO,
+            classificacao
         );
 
         return receitasRecebidas.subtract(despesasPagas);
     }
 
-    private BigDecimal calcularLucroEmpresarialMes(
+    private BigDecimal calcularLucroPorClassificacaoMes(
         Usuario usuario,
+        ClassificacaoFinanceira classificacao,
         LocalDate inicioMes,
         LocalDate fimMes
     ) {
-        BigDecimal receitasEmpresariaisRecebidas =
+        BigDecimal receitasRecebidas =
             movimentacaoRepository.somaPorUsuarioTipoClassificacaoStatusEPeriodo(
                 usuario,
                 TipoMovimentacao.RECEITA,
-                ClassificacaoFinanceira.EMPRESARIAL,
+                classificacao,
                 StatusMovimentacao.RECEBIDO,
                 inicioMes,
                 fimMes
             );
 
-        BigDecimal despesasEmpresariaisPagas =
+        BigDecimal despesasPagas =
             movimentacaoRepository.somaPorUsuarioTipoClassificacaoStatusEPeriodo(
                 usuario,
                 TipoMovimentacao.DESPESA,
-                ClassificacaoFinanceira.EMPRESARIAL,
+                classificacao,
                 StatusMovimentacao.PAGO,
                 inicioMes,
                 fimMes
             );
 
-        return receitasEmpresariaisRecebidas.subtract(despesasEmpresariaisPagas);
+        return receitasRecebidas.subtract(despesasPagas);
     }
 
     private ContaAtrasadaResponse toContaAtrasadaResponse(Movimentacao movimentacao, LocalDate hoje) {
