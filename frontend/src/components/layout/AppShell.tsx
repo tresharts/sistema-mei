@@ -105,19 +105,6 @@ function DesktopSidebar() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="mt-auto rounded-2xl bg-surface-container-low p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">
-            Atalho
-          </p>
-          <Link
-            className="mt-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-on-primary"
-            to={ROUTE_PATHS.newTransaction}
-          >
-            <AppIcon className="h-4 w-4" name="plus" />
-            Nova movimentação
-          </Link>
-        </div>
       </div>
     </aside>
   );
