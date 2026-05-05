@@ -43,7 +43,7 @@ function AppShell() {
             isNewTransaction
               ? "pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
               : "pb-32 pt-24 lg:px-8 lg:pb-8",
-            isHistory ? "lg:max-w-[64rem]" : !isNewTransaction && "lg:max-w-3xl",
+            !isNewTransaction && "lg:max-w-[64rem]",
           )}
         >
           <Outlet />

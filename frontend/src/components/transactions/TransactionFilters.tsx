@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import AppIcon from "../ui/AppIcon";
+import Modal from "../ui/Modal";
 import { formatDateBRL } from "../../lib/format";
 import type {
   ApiTransactionKind,
@@ -259,67 +260,50 @@ function FilterPickerModal({
   title: string;
 }) {
   return (
-    <div className="modal-overlay">
-      <div className="modal-panel">
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <AppIcon name="filter_list" />
-            </div>
-            <h2 className="font-headline text-lg font-bold text-on-surface">
-              {title}
-            </h2>
-          </div>
+    <Modal
+      contentClassName="space-y-2 p-4"
+      icon="filter_list"
+      title={title}
+      onClose={onClose}
+    >
+      {options.map((option) => {
+        const isSelected = option.value === selectedValue;
+
+        return (
           <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
-            onClick={onClose}
+            key={option.value || "all"}
+            className={
+              isSelected
+                ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
+                : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+            }
+            onClick={() => onSelect(option.value)}
             type="button"
           >
-            <AppIcon name="close" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto space-y-2 p-4">
-          {options.map((option) => {
-            const isSelected = option.value === selectedValue;
-
-            return (
-              <button
-                key={option.value || "all"}
-                className={
-                  isSelected
-                    ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
-                    : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
-                }
-                onClick={() => onSelect(option.value)}
-                type="button"
-              >
-                <span className="flex min-w-0 items-center gap-3">
-                  {option.icon ? (
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-primary">
-                      <AppIcon className="h-4 w-4" name={option.icon} />
-                    </span>
-                  ) : null}
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-on-surface">
-                      {option.label}
-                    </span>
-                    {option.helper ? (
-                      <span className="block text-xs text-on-surface-variant">
-                        {option.helper}
-                        {option.scopeHelper ? ` • ${option.scopeHelper}` : ""}
-                      </span>
-                    ) : null}
-                  </span>
+            <span className="flex min-w-0 items-center gap-3">
+              {option.icon ? (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-container-high text-primary">
+                  <AppIcon className="h-4 w-4" name={option.icon} />
                 </span>
-                {isSelected ? (
-                  <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+              ) : null}
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold text-on-surface">
+                  {option.label}
+                </span>
+                {option.helper ? (
+                  <span className="block text-xs text-on-surface-variant">
+                    {option.helper}
+                    {option.scopeHelper ? ` • ${option.scopeHelper}` : ""}
+                  </span>
                 ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+              </span>
+            </span>
+            {isSelected ? (
+              <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+            ) : null}
+          </button>
+        );
+      })}
+    </Modal>
   );
 }

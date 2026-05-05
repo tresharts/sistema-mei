@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../ui/Button";
 import AppIcon from "../ui/AppIcon";
 import Input from "../ui/Input";
+import Modal from "../ui/Modal";
 import { formatDateBRL } from "../../lib/format";
 import type { TransactionCategory } from "../../types/finance";
 
@@ -414,75 +415,56 @@ function CategoryPickerModal({
   selectedCategoryId: string;
 }) {
   return (
-    <div className="modal-overlay">
-      <div className="modal-panel">
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <AppIcon name="tag" />
-            </div>
-            <h2 className="font-headline text-lg font-bold text-on-surface">
-              Categoria
-            </h2>
-          </div>
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
-            onClick={onClose}
-            type="button"
-          >
-            <AppIcon name="close" />
-          </button>
-        </div>
+    <Modal
+      contentClassName={categories.length > 0 ? "space-y-2 p-4" : "p-5 text-sm text-on-surface-variant"}
+      icon="tag"
+      title="Categoria"
+      onClose={onClose}
+    >
+      {categories.length > 0 ? (
+        categories.map((category) => {
+          const isSelected = category.id === selectedCategoryId;
+          const isIncome = category.tipo === "RECEITA";
 
-        {categories.length > 0 ? (
-          <div className="flex-1 overflow-y-auto space-y-2 p-4">
-            {categories.map((category) => {
-              const isSelected = category.id === selectedCategoryId;
-              const isIncome = category.tipo === "RECEITA";
-
-              return (
-                <button
-                  key={category.id}
+          return (
+            <button
+              key={category.id}
+              className={
+                isSelected
+                  ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
+                  : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+              }
+              onClick={() => onSelect(category)}
+              type="button"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span
                   className={
-                    isSelected
-                      ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
-                      : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+                    isIncome
+                      ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-secondary"
+                      : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
                   }
-                  onClick={() => onSelect(category)}
-                  type="button"
                 >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span
-                      className={
-                        isIncome
-                          ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-secondary"
-                          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
-                      }
-                    >
-                      <AppIcon className="h-4 w-4" name={category.icon} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-on-surface">
-                        {category.name}
-                      </span>
-                      <span className="block text-xs text-on-surface-variant">
-                        {isIncome ? "Receita" : "Despesa"}
-                      </span>
-                    </span>
+                  <AppIcon className="h-4 w-4" name={category.icon} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-bold text-on-surface">
+                    {category.name}
                   </span>
-                  {isSelected ? (
-                    <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-5 text-sm text-on-surface-variant">
-            Nenhuma categoria disponível para este tipo de movimentação.
-          </div>
-        )}
-      </div>
-    </div>
+                  <span className="block text-xs text-on-surface-variant">
+                    {isIncome ? "Receita" : "Despesa"}
+                  </span>
+                </span>
+              </span>
+              {isSelected ? (
+                <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+              ) : null}
+            </button>
+          );
+        })
+      ) : (
+        "Nenhuma categoria disponível para este tipo de movimentação."
+      )}
+    </Modal>
   );
 }

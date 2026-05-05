@@ -190,7 +190,7 @@ function DashboardPage() {
         </section>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard
           icon="sparkles"
           label="Entrou hoje"
@@ -232,7 +232,7 @@ function DashboardPage() {
 
       <AlertSection alerts={summary.alertas} isLoading={isLoading} />
 
-      <div className="grid gap-8">
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-headline text-lg font-bold text-on-surface">

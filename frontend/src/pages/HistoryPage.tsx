@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import TransactionFilters, {
   type TransactionFiltersData,
@@ -6,6 +6,7 @@ import TransactionFilters, {
 import AppIcon from "../components/ui/AppIcon";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import Modal from "../components/ui/Modal";
 import { formatCurrencyBRL, formatDateBRL, formatShortDate } from "../lib/format";
 import { categoriesService } from "../services/categoriesService";
 import {
@@ -24,6 +25,7 @@ import type {
 } from "../types/finance";
 
 const MAX_TRANSACTION_AMOUNT = 1_000_000;
+const HISTORY_PAGE_SIZE = 20;
 
 function kindToApi(kind: TransactionKind): ApiTransactionKind {
   return kind === "income" ? "RECEITA" : "DESPESA";
@@ -63,8 +65,12 @@ export default function HistoryPage() {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [filters, setFilters] = useState<TransactionFiltersData>({});
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [editingTransaction, setEditingTransaction] = useState<TransactionItem | null>(null);
+  const requestSeqRef = useRef(0);
 
   useEffect(() => {
     categoriesService
@@ -73,34 +79,65 @@ export default function HistoryPage() {
       .catch(() => toast.error("Erro ao carregar categorias"));
   }, []);
 
-  useEffect(() => {
-    let shouldUpdate = true;
+  const loadTransactions = useCallback(
+    async (pageToLoad: number, append = false) => {
+      const requestSeq = requestSeqRef.current + 1;
+      requestSeqRef.current = requestSeq;
 
-    async function loadData() {
       try {
-        setIsLoading(true);
-        const { transactions: data } = await transactionService.getAllTransactions(filters);
-
-        if (shouldUpdate) {
-          setTransactions(data);
+        if (append) {
+          setIsLoadingMore(true);
+        } else {
+          setIsLoading(true);
         }
+
+        const { totalPages: nextTotalPages, transactions: data } =
+          await transactionService.getAllTransactions({
+            ...filters,
+            page: pageToLoad,
+            size: HISTORY_PAGE_SIZE,
+            sort: "data,desc",
+          });
+
+        if (requestSeq !== requestSeqRef.current) {
+          return;
+        }
+
+        setTransactions((current) => {
+          if (!append) {
+            return data;
+          }
+
+          const existingIds = new Set(current.map((transaction) => transaction.id));
+          const nextItems = data.filter((transaction) => !existingIds.has(transaction.id));
+          return [...current, ...nextItems];
+        });
+        setCurrentPage(pageToLoad);
+        setTotalPages(nextTotalPages ?? 0);
       } catch {
-        if (shouldUpdate) {
+        if (requestSeq === requestSeqRef.current) {
           toast.error("Erro ao sincronizar com o servidor");
         }
       } finally {
-        if (shouldUpdate) {
-          setIsLoading(false);
+        if (requestSeq === requestSeqRef.current) {
+          if (append) {
+            setIsLoadingMore(false);
+          } else {
+            setIsLoading(false);
+          }
         }
       }
-    }
+    },
+    [filters],
+  );
 
-    loadData();
+  useEffect(() => {
+    loadTransactions(0);
+  }, [loadTransactions]);
 
-    return () => {
-      shouldUpdate = false;
-    };
-  }, [filters]);
+  const handleFilterChange = useCallback((nextFilters: TransactionFiltersData) => {
+    setFilters(nextFilters);
+  }, []);
 
   const handleStatusChange = async (
     id: string,
@@ -181,6 +218,8 @@ export default function HistoryPage() {
     }));
   }, [transactions]);
 
+  const hasMorePages = currentPage + 1 < totalPages;
+
   return (
     <div className="mx-auto w-full pb-24 lg:pb-0">
       <header className="pb-6">
@@ -189,7 +228,7 @@ export default function HistoryPage() {
       </header>
 
       <div className="mb-6">
-        <TransactionFilters categories={categories} onFilterChange={setFilters} />
+        <TransactionFilters categories={categories} onFilterChange={handleFilterChange} />
       </div>
 
       <main className="space-y-8">
@@ -221,6 +260,19 @@ export default function HistoryPage() {
             <p className="text-on-surface-variant">Nenhuma movimentação encontrada</p>
           </div>
         )}
+
+        {!isLoading && hasMorePages ? (
+          <div className="flex justify-center pt-2">
+            <Button
+              isLoading={isLoadingMore}
+              variant="secondary"
+              onClick={() => loadTransactions(currentPage + 1, true)}
+              type="button"
+            >
+              Carregar mais
+            </Button>
+          </div>
+        ) : null}
       </main>
 
       {editingTransaction ? (
@@ -394,32 +446,26 @@ function EditTransactionModal({
   };
 
   return (
-    <div className="modal-overlay">
-      <form className="modal-panel max-w-md" onSubmit={handleSubmit}>
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <AppIcon name="edit" />
-            </div>
-            <div>
-              <h2 className="font-headline text-lg font-bold text-on-surface">
-                Editar movimentação
-              </h2>
-              <p className="text-xs text-on-surface-variant">
-                {transaction.scopeLabel} • {transaction.kind === "income" ? "Receita" : "Despesa"}
-              </p>
-            </div>
-          </div>
+    <>
+      <Modal
+        className="max-w-md"
+        contentClassName="space-y-4"
+        footer={
           <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
-            onClick={onClose}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-error/15 bg-error-container/25 px-4 text-sm font-bold text-error transition hover:bg-error-container/40"
+            onClick={() => onDelete(transaction.id)}
             type="button"
           >
-            <AppIcon name="close" />
+            <AppIcon className="h-4 w-4" name="trash" />
+            Excluir movimentação
           </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto space-y-4 p-5">
+        }
+        formProps={{ onSubmit: handleSubmit }}
+        icon="edit"
+        subtitle={`${transaction.scopeLabel} • ${transaction.kind === "income" ? "Receita" : "Despesa"}`}
+        title="Editar movimentação"
+        onClose={onClose}
+      >
           <Input
             label="Descrição"
             maxLength={160}
@@ -541,19 +587,7 @@ function EditTransactionModal({
           <Button fullWidth isLoading={isSubmitting} type="submit">
             Salvar
           </Button>
-        </div>
-
-        <div className="shrink-0 border-t border-outline-variant/30 bg-surface-container-low px-5 py-4">
-          <button
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-error/15 bg-error-container/25 px-4 text-sm font-bold text-error transition hover:bg-error-container/40"
-            onClick={() => onDelete(transaction.id)}
-            type="button"
-          >
-            <AppIcon className="h-4 w-4" name="trash" />
-            Excluir movimentação
-          </button>
-        </div>
-      </form>
+      </Modal>
 
       {isCategoryPickerOpen ? (
         <EditCategoryPickerModal
@@ -566,7 +600,7 @@ function EditTransactionModal({
           }}
         />
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -582,73 +616,54 @@ function EditCategoryPickerModal({
   selectedCategoryId: string;
 }) {
   return (
-    <div className="modal-overlay">
-      <div className="modal-panel">
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <AppIcon name="tag" />
-            </div>
-            <h2 className="font-headline text-lg font-bold text-on-surface">
-              Categoria
-            </h2>
-          </div>
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
-            onClick={onClose}
-            type="button"
-          >
-            <AppIcon name="close" />
-          </button>
-        </div>
+    <Modal
+      contentClassName={categories.length > 0 ? "space-y-2 p-4" : "p-5 text-sm text-on-surface-variant"}
+      icon="tag"
+      title="Categoria"
+      onClose={onClose}
+    >
+      {categories.length > 0 ? (
+        categories.map((category) => {
+          const isSelected = category.id === selectedCategoryId;
+          const isIncome = category.tipo === "RECEITA";
 
-        {categories.length > 0 ? (
-          <div className="flex-1 overflow-y-auto space-y-2 p-4">
-            {categories.map((category) => {
-              const isSelected = category.id === selectedCategoryId;
-              const isIncome = category.tipo === "RECEITA";
-
-              return (
-                <button
-                  key={category.id}
+          return (
+            <button
+              key={category.id}
+              className={
+                isSelected
+                  ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
+                  : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+              }
+              onClick={() => onSelect(category)}
+              type="button"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span
                   className={
-                    isSelected
-                      ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
-                      : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+                    isIncome
+                      ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-secondary"
+                      : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
                   }
-                  onClick={() => onSelect(category)}
-                  type="button"
                 >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span
-                      className={
-                        isIncome
-                          ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-secondary"
-                          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
-                      }
-                    >
-                      <AppIcon className="h-4 w-4" name={category.icon} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-on-surface">
-                        {category.name}
-                      </span>
-                      <span className="block text-xs text-on-surface-variant">
-                        {isIncome ? "Receita" : "Despesa"}
-                      </span>
-                    </span>
+                  <AppIcon className="h-4 w-4" name={category.icon} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-bold text-on-surface">
+                    {category.name}
                   </span>
-                  {isSelected ? <span className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-5 text-sm text-on-surface-variant">
-            Nenhuma categoria disponível para esta movimentação.
-          </div>
-        )}
-      </div>
-    </div>
+                  <span className="block text-xs text-on-surface-variant">
+                    {isIncome ? "Receita" : "Despesa"}
+                  </span>
+                </span>
+              </span>
+              {isSelected ? <span className="h-2.5 w-2.5 rounded-full bg-primary" /> : null}
+            </button>
+          );
+        })
+      ) : (
+        "Nenhuma categoria disponível para esta movimentação."
+      )}
+    </Modal>
   );
 }
