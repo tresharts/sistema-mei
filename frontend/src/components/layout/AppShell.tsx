@@ -38,11 +38,13 @@ function AppShell() {
         <TopAppBar title={title} variant={headerVariant} />
 
         <main
-          className={
+          className={cn(
+            "relative z-10 mx-auto w-full px-6",
             isNewTransaction
-              ? "relative z-10 mx-auto w-full px-6 pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
-              : "relative z-10 mx-auto w-full px-6 pb-32 pt-24 lg:max-w-3xl lg:px-8 lg:pb-8"
-          }
+              ? "pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
+              : "pb-32 pt-24 lg:px-8 lg:pb-8",
+            !isNewTransaction && "lg:max-w-[64rem]",
+          )}
         >
           <Outlet />
         </main>
@@ -103,19 +105,6 @@ function DesktopSidebar() {
             </NavLink>
           ))}
         </nav>
-
-        <div className="mt-auto rounded-2xl bg-surface-container-low p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">
-            Atalho
-          </p>
-          <Link
-            className="mt-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-on-primary"
-            to={ROUTE_PATHS.newTransaction}
-          >
-            <AppIcon className="h-4 w-4" name="plus" />
-            Nova movimentação
-          </Link>
-        </div>
       </div>
     </aside>
   );

@@ -33,6 +33,7 @@ export interface TransactionItem {
   status: TransactionStatus
   statusLabel: string; 
   scopeLabel: string; 
+  categoryId: string;
   category: string; 
 
   date: string; 
@@ -93,6 +94,7 @@ export interface TransactionCategory {
   id: string;
   name: string;
   tipo: ApiTransactionKind;
+  classificacao: ApiTransactionScope;
   isDefault: boolean;
   icon: IconName;
 }

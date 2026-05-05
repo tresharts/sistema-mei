@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../ui/Button";
 import AppIcon from "../ui/AppIcon";
 import Input from "../ui/Input";
+import Modal from "../ui/Modal";
 import { formatDateBRL } from "../../lib/format";
 import type { TransactionCategory } from "../../types/finance";
+
+const MAX_TRANSACTION_AMOUNT = 1_000_000;
 
 export interface TransactionFormData {
   kind: "income" | "expense";
@@ -36,16 +39,23 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   const [dueDate, setDueDate] = useState(initialData?.dueDate || "");
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const [showCategoryError, setShowCategoryError] = useState(false);
+  const [amountError, setAmountError] = useState("");
   const dateInputRef = useRef<HTMLInputElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
 
   const settledLabel = kind === "income" ? "Já Recebido" : "Já Pago";
   const pendingLabel = kind === "income" ? "A Receber" : "A Pagar";
   const selectedCategoryKind = kind === "income" ? "RECEITA" : "DESPESA";
+  const selectedCategoryScope = scope === "business" ? "EMPRESARIAL" : "PESSOAL";
 
   const availableCategories = useMemo(
-    () => categories.filter((category) => category.tipo === selectedCategoryKind),
-    [categories, selectedCategoryKind]
+    () =>
+      categories.filter(
+        (category) =>
+          category.tipo === selectedCategoryKind &&
+          category.classificacao === selectedCategoryScope
+      ),
+    [categories, selectedCategoryKind, selectedCategoryScope]
   );
 
   const selectedCategory = useMemo(
@@ -55,6 +65,30 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
 
   const formattedDate = useMemo(() => formatDateBRL(date), [date]);
   const formattedDueDate = useMemo(() => formatDateBRL(dueDate), [dueDate]);
+
+  const validateAmount = (value: string) => {
+    const numericValue = Number(value);
+
+    if (!value || !Number.isFinite(numericValue)) {
+      return "Informe um valor válido.";
+    }
+
+    if (numericValue <= 0) {
+      return "Informe um valor maior que zero.";
+    }
+
+    if (numericValue > MAX_TRANSACTION_AMOUNT) {
+      return "O valor máximo por movimentação é R$ 1.000.000,00.";
+    }
+
+    return "";
+  };
+
+  const handleAmountChange = (value: string) => {
+    const sanitizedValue = value.replace("-", "");
+    setAmount(sanitizedValue);
+    setAmountError(sanitizedValue ? validateAmount(sanitizedValue) : "");
+  };
 
   useEffect(() => {
     if (!categoryId) {
@@ -78,6 +112,12 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
       return;
     }
 
+    const amountValidationError = validateAmount(amount);
+    if (amountValidationError) {
+      setAmountError(amountValidationError);
+      return;
+    }
+
     onSubmit({ 
         kind, 
         scope, 
@@ -91,6 +131,64 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-10">
+      <div className="rounded-2xl bg-surface-container-high p-1 sm:p-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            className={
+              scope === "business"
+                ? "flex h-9 items-center justify-center rounded-xl bg-surface-container-lowest text-sm font-bold text-primary shadow-sm ring-1 ring-primary/10 sm:h-11"
+                : "flex h-9 items-center justify-center rounded-xl text-sm font-medium text-on-surface-variant transition hover:bg-surface-container-low sm:h-11"
+            }
+            onClick={() => setScope("business")}
+            type="button"
+          >
+            Empresarial
+          </button>
+          <button
+            className={
+              scope === "personal"
+                ? "flex h-9 items-center justify-center rounded-xl bg-surface-container-lowest text-sm font-bold text-primary shadow-sm ring-1 ring-primary/10 sm:h-11"
+                : "flex h-9 items-center justify-center rounded-xl text-sm font-medium text-on-surface-variant transition hover:bg-surface-container-low sm:h-11"
+            }
+            onClick={() => setScope("personal")}
+            type="button"
+          >
+            Pessoal
+          </button>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <label className="mb-1 block text-xs font-medium text-on-surface-variant sm:mb-2 sm:text-sm">
+          {kind === "income" ? "Quanto entrou?" : "Quanto saiu?"}
+        </label>
+        <div className="flex items-baseline justify-center gap-1">
+          <span className="font-headline text-xl font-bold text-primary sm:text-2xl">R$</span>
+          <input
+            className="w-full bg-transparent text-center font-headline text-4xl font-extrabold text-on-surface focus:outline-none placeholder-on-surface-variant/30 sm:text-5xl"
+            placeholder="0,00"
+            type="number"
+            step="0.01"
+            min="0.01"
+            max={MAX_TRANSACTION_AMOUNT}
+            required
+            value={amount}
+            onKeyDown={(event) => {
+              if (["-", "+", "e", "E"].includes(event.key)) {
+                event.preventDefault();
+              }
+            }}
+            onChange={(e) => handleAmountChange(e.target.value)}
+          />
+        </div>
+        {amountError ? (
+          <p className="mt-2 text-center text-xs font-medium text-error">
+            {amountError}
+          </p>
+        ) : null}
+        <div className="mx-auto mt-1 h-0.5 w-24 rounded-full bg-primary/20 sm:mt-2 sm:w-32" />
+      </div>
+
       <div className="flex rounded-xl bg-surface-container-high p-1 sm:p-1.5">
         <button
           className={
@@ -114,25 +212,6 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
         >
           Gastos
         </button>
-      </div>
-
-      <div className="text-center">
-        <label className="mb-1 block text-xs font-medium text-on-surface-variant sm:mb-2 sm:text-sm">
-          {kind === "income" ? "Quanto entrou?" : "Quanto saiu?"}
-        </label>
-        <div className="flex items-baseline justify-center gap-1">
-          <span className="font-headline text-xl font-bold text-primary sm:text-2xl">R$</span>
-          <input
-            className="w-full bg-transparent text-center font-headline text-4xl font-extrabold text-on-surface focus:outline-none placeholder-on-surface-variant/30 sm:text-5xl"
-            placeholder="0,00"
-            type="number"
-            step="0.01"
-            required
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-        <div className="mx-auto mt-1 h-0.5 w-24 rounded-full bg-primary/20 sm:mt-2 sm:w-32" />
       </div>
 
       <div className="space-y-4 sm:space-y-8">
@@ -296,41 +375,6 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
           )}
         </div>
 
-        
-        <div className="space-y-2 sm:space-y-3">
-          <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-            Classificação
-          </label>
-          <div className="flex gap-2 sm:gap-3">
-            <button
-              className={
-                scope === "business"
-                  ? "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-highest text-on-surface ring-2 ring-outline sm:h-14"
-                  : "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-low text-on-surface transition hover:bg-surface-container-highest sm:h-14"
-              }
-              onClick={() => setScope("business")}
-              type="button"
-            >
-              <span className="text-sm font-semibold">Empresarial</span>
-            </button>
-            <button
-              className={
-                scope === "personal"
-                  ? "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-highest text-on-surface ring-2 ring-outline sm:h-14"
-                  : "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-low text-on-surface transition hover:bg-surface-container-highest sm:h-14"
-              }
-              onClick={() => setScope("personal")}
-              type="button"
-            >
-              <span className="text-sm font-semibold">Pessoal</span>
-            </button>
-          </div>
-          <p className="hidden px-4 text-center text-[11px] leading-tight text-outline sm:block">
-            Mantenha as finanças separadas para um controle mais claro do negócio.
-          </p>
-        </div>
-
-        
         <div className="pt-3 sm:pt-6">
           <Button type="submit" className="min-h-12 gap-2 font-headline text-base font-bold sm:min-h-14 sm:text-lg" fullWidth disabled={isLoading}>
             {isLoading ? "Salvando..." : (
@@ -371,75 +415,56 @@ function CategoryPickerModal({
   selectedCategoryId: string;
 }) {
   return (
-    <div className="modal-overlay">
-      <div className="modal-panel">
-        <div className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <AppIcon name="tag" />
-            </div>
-            <h2 className="font-headline text-lg font-bold text-on-surface">
-              Categoria
-            </h2>
-          </div>
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
-            onClick={onClose}
-            type="button"
-          >
-            <AppIcon name="close" />
-          </button>
-        </div>
+    <Modal
+      contentClassName={categories.length > 0 ? "space-y-2 p-4" : "p-5 text-sm text-on-surface-variant"}
+      icon="tag"
+      title="Categoria"
+      onClose={onClose}
+    >
+      {categories.length > 0 ? (
+        categories.map((category) => {
+          const isSelected = category.id === selectedCategoryId;
+          const isIncome = category.tipo === "RECEITA";
 
-        {categories.length > 0 ? (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto p-4">
-            {categories.map((category) => {
-              const isSelected = category.id === selectedCategoryId;
-              const isIncome = category.tipo === "RECEITA";
-
-              return (
-                <button
-                  key={category.id}
+          return (
+            <button
+              key={category.id}
+              className={
+                isSelected
+                  ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
+                  : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+              }
+              onClick={() => onSelect(category)}
+              type="button"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span
                   className={
-                    isSelected
-                      ? "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-primary/10 p-4 text-left ring-2 ring-primary/30"
-                      : "flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-4 text-left transition hover:bg-surface-container-high"
+                    isIncome
+                      ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-secondary"
+                      : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
                   }
-                  onClick={() => onSelect(category)}
-                  type="button"
                 >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span
-                      className={
-                        isIncome
-                          ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-container text-secondary"
-                          : "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-error-container/40 text-error"
-                      }
-                    >
-                      <AppIcon className="h-4 w-4" name={category.icon} />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-bold text-on-surface">
-                        {category.name}
-                      </span>
-                      <span className="block text-xs text-on-surface-variant">
-                        {isIncome ? "Receita" : "Despesa"}
-                      </span>
-                    </span>
+                  <AppIcon className="h-4 w-4" name={category.icon} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-bold text-on-surface">
+                    {category.name}
                   </span>
-                  {isSelected ? (
-                    <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="p-5 text-sm text-on-surface-variant">
-            Nenhuma categoria disponível para este tipo de movimentação.
-          </div>
-        )}
-      </div>
-    </div>
+                  <span className="block text-xs text-on-surface-variant">
+                    {isIncome ? "Receita" : "Despesa"}
+                  </span>
+                </span>
+              </span>
+              {isSelected ? (
+                <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+              ) : null}
+            </button>
+          );
+        })
+      ) : (
+        "Nenhuma categoria disponível para este tipo de movimentação."
+      )}
+    </Modal>
   );
 }

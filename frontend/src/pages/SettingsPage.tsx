@@ -6,6 +6,7 @@ import Avatar from "../components/ui/Avatar";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import AppIcon from "../components/ui/AppIcon";
+import Modal from "../components/ui/Modal";
 import { notificationPreferences } from "../data/mockData";
 import { ROUTE_PATHS } from "../lib/constants";
 import { api } from "../lib/api";
@@ -13,7 +14,11 @@ import {
   categoriesService,
   type CategoryFormPayload,
 } from "../services/categoriesService";
-import type { ApiTransactionKind, TransactionCategory } from "../types/finance";
+import type {
+  ApiTransactionKind,
+  ApiTransactionScope,
+  TransactionCategory,
+} from "../types/finance";
 
 type ApiErrorResponse = {
   detail?: string;
@@ -38,6 +43,10 @@ function getCategoryGroupLabel(tipo: ApiTransactionKind) {
   return tipo === "RECEITA" ? "Receita" : "Despesa";
 }
 
+function getCategoryScopeLabel(classificacao: ApiTransactionScope) {
+  return classificacao === "EMPRESARIAL" ? "Empresarial" : "Pessoal";
+}
+
 function SettingsPage() {
   const [notifications, setNotifications] = useState(notificationPreferences);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
@@ -54,12 +63,9 @@ function SettingsPage() {
   async function loadCategories() {
     try {
       setIsLoadingCategories(true);
-      const [incomeCategories, expenseCategories] = await Promise.all([
-        categoriesService.getAllCategories("RECEITA"),
-        categoriesService.getAllCategories("DESPESA"),
-      ]);
+      const loadedCategories = await categoriesService.getAllCategories();
 
-      setCategories([...incomeCategories, ...expenseCategories]);
+      setCategories(loadedCategories);
     } catch (error) {
       toast.error("Erro ao carregar categorias.", {
         description: getErrorMessage(error) ?? "Tente novamente em alguns instantes.",
@@ -124,7 +130,8 @@ function SettingsPage() {
   };
 
   return (
-    <div className="space-y-10">
+    <div className="grid gap-10 lg:grid-cols-[0.9fr_1.4fr] lg:items-start">
+      <div className="space-y-10 lg:sticky lg:top-24">
       <section className="space-y-4">
         <div className="flex items-center gap-5 rounded-[1.5rem] rounded-bl-lg bg-surface-container-lowest p-6 shadow-editorial">
           <div className="relative">
@@ -151,6 +158,46 @@ function SettingsPage() {
         </div>
       </section>
 
+      <section className="space-y-4 rounded-2xl bg-primary/5 p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <AppIcon className="text-primary" name="heart" />
+          </div>
+          <div>
+            <h3 className="font-headline font-bold text-on-surface">
+              Alguma dúvida?
+            </h3>
+            <p className="text-xs text-on-surface-variant">
+              Estamos aqui para cuidar do seu negócio.
+            </p>
+          </div>
+        </div>
+
+        <button
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
+          type="button"
+        >
+          <AppIcon className="h-4 w-4" name="chat" />
+          Conversar com suporte
+        </button>
+      </section>
+
+      <div className="space-y-6 pb-8 pt-2">
+        <button
+          onClick={handleLogout}
+          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
+          type="button"
+        >
+          <AppIcon name="logout" />
+          Sair da conta
+        </button>
+        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
+          Sistema MEI v0.1.0
+        </p>
+      </div>
+      </div>
+
+      <div className="space-y-10">
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
           <AppIcon className="text-primary" name="document" />
@@ -285,42 +332,6 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl bg-primary/5 p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <AppIcon className="text-primary" name="heart" />
-          </div>
-          <div>
-            <h3 className="font-headline font-bold text-on-surface">
-              Precisa de um abraço?
-            </h3>
-            <p className="text-xs text-on-surface-variant">
-              Estamos aqui para cuidar do seu negócio.
-            </p>
-          </div>
-        </div>
-
-        <button
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
-          type="button"
-        >
-          <AppIcon className="h-4 w-4" name="chat" />
-          Conversar com suporte
-        </button>
-      </section>
-
-      <div className="space-y-6 pb-8 pt-2">
-        <button
-          onClick={handleLogout}
-          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
-          type="button"
-        >
-          <AppIcon name="logout" />
-          Sair da conta
-        </button>
-        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
-          Sistema MEI v0.1.0
-        </p>
       </div>
 
       {categoryModal ? (
@@ -400,7 +411,7 @@ function CategoryCard({
 
       <p className="mt-3 truncate text-sm font-bold text-on-surface">{category.name}</p>
       <p className="text-xs text-on-surface-variant">
-        {getCategoryGroupLabel(category.tipo)}
+        {getCategoryGroupLabel(category.tipo)} • {getCategoryScopeLabel(category.classificacao)}
       </p>
     </article>
   );
@@ -419,6 +430,9 @@ function CategoryFormModal({
   const [tipo, setTipo] = useState<ApiTransactionKind>(
     modalState.category?.tipo ?? "DESPESA",
   );
+  const [classificacao, setClassificacao] = useState<ApiTransactionScope>(
+    modalState.category?.classificacao ?? "EMPRESARIAL",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const title =
@@ -435,51 +449,44 @@ function CategoryFormModal({
 
     try {
       setIsSubmitting(true);
-      await onSubmit({ nome: trimmedName, tipo });
+      await onSubmit({ nome: trimmedName, tipo, classificacao });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="modal-overlay">
-      <form
-        className="modal-panel"
-        onSubmit={handleSubmit}
-      >
-        <div className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <AppIcon name="tag" />
-            </div>
-            <h2 className="font-headline text-lg font-bold text-on-surface">
-              {title}
-            </h2>
-          </div>
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
-            onClick={onClose}
-            type="button"
-          >
-            <AppIcon name="close" />
-          </button>
+    <Modal
+      contentClassName="space-y-5"
+      footer={
+        <div className="grid grid-cols-2 gap-3">
+          <Button fullWidth variant="secondary" onClick={onClose} type="button">
+            Cancelar
+          </Button>
+          <Button fullWidth isLoading={isSubmitting} type="submit">
+            Salvar
+          </Button>
         </div>
-
-        <div className="space-y-5 p-5">
-          <label className="block space-y-2">
-            <span className="px-1 text-sm font-medium text-on-surface-variant">
-              Nome
-            </span>
-            <Input
-              autoFocus
-              className="bg-surface-container-low"
-              maxLength={120}
-              placeholder="Ex: Marketing"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
+      }
+      formProps={{ onSubmit: handleSubmit }}
+      icon="tag"
+      title={title}
+      onClose={onClose}
+    >
+      <label className="block space-y-2">
+        <span className="px-1 text-sm font-medium text-on-surface-variant">
+          Nome
+        </span>
+        <Input
+          autoFocus
+          className="bg-surface-container-low"
+          maxLength={120}
+          placeholder="Ex: Marketing"
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
+      </label>
 
           <div className="space-y-2">
             <span className="px-1 text-sm font-medium text-on-surface-variant">
@@ -514,18 +521,41 @@ function CategoryFormModal({
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3 bg-surface-container-low px-5 py-4">
-          <Button fullWidth variant="secondary" onClick={onClose} type="button">
-            Cancelar
-          </Button>
-          <Button fullWidth isLoading={isSubmitting} type="submit">
-            Salvar
-          </Button>
-        </div>
-      </form>
-    </div>
+          <div className="space-y-2">
+            <span className="px-1 text-sm font-medium text-on-surface-variant">
+              Classificação
+            </span>
+            <div className="rounded-2xl bg-surface-container-low p-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  className={
+                    classificacao === "EMPRESARIAL"
+                      ? "flex h-12 items-center justify-center gap-2 rounded-xl bg-primary/10 font-semibold text-primary ring-2 ring-primary/20"
+                      : "flex h-12 items-center justify-center gap-2 rounded-xl font-medium text-on-surface-variant transition hover:bg-surface-container-high"
+                  }
+                  onClick={() => setClassificacao("EMPRESARIAL")}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4" name="briefcase" />
+                  Empresarial
+                </button>
+                <button
+                  className={
+                    classificacao === "PESSOAL"
+                      ? "flex h-12 items-center justify-center gap-2 rounded-xl bg-primary/10 font-semibold text-primary ring-2 ring-primary/20"
+                      : "flex h-12 items-center justify-center gap-2 rounded-xl font-medium text-on-surface-variant transition hover:bg-surface-container-high"
+                  }
+                  onClick={() => setClassificacao("PESSOAL")}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4" name="user" />
+                  Pessoal
+                </button>
+              </div>
+            </div>
+          </div>
+    </Modal>
   );
 }
 
@@ -550,24 +580,10 @@ function DeleteCategoryModal({
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-panel">
-        <div className="space-y-4 p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-container/40 text-error">
-            <AppIcon name="trash" />
-          </div>
-          <div>
-            <h2 className="font-headline text-xl font-bold text-on-surface">
-              Excluir categoria?
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              A categoria {category.name} será removida das configurações. Revise
-              antes se ela já foi usada em movimentações.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 bg-surface-container-low px-5 py-4">
+    <Modal
+      contentClassName="space-y-4"
+      footer={
+        <div className="grid grid-cols-2 gap-3">
           <Button fullWidth variant="secondary" onClick={onClose} type="button">
             Cancelar
           </Button>
@@ -581,8 +597,22 @@ function DeleteCategoryModal({
             Excluir
           </Button>
         </div>
+      }
+      onClose={onClose}
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-container/40 text-error">
+        <AppIcon name="trash" />
       </div>
-    </div>
+      <div>
+        <h2 className="font-headline text-xl font-bold text-on-surface">
+          Excluir categoria?
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+          A categoria {category.name} será removida das configurações. Revise
+          antes se ela já foi usada em movimentações.
+        </p>
+      </div>
+    </Modal>
   );
 }
 

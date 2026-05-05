@@ -46,12 +46,42 @@
 
   .modal-overlay {
     animation: modal-overlay-in 180ms ease-out both;
-    @apply fixed inset-0 z-50 flex items-end bg-on-surface/30 px-4 pb-4 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6;
+    @apply fixed inset-0 z-50 flex items-end bg-on-surface/30 px-4 pb-4 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6 lg:pl-[15.5rem] lg:pt-[5.5rem];
   }
 
   .modal-panel {
     animation: modal-panel-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    @apply w-full max-w-md overflow-hidden rounded-[1.5rem] bg-surface-container-lowest shadow-editorial;
+    @apply flex max-h-[75vh] w-full max-w-md flex-col overflow-hidden rounded-[1.5rem] bg-surface-container-lowest shadow-editorial sm:max-h-[80vh];
+  }
+
+  .skeleton-nu {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(
+        100deg,
+        rgb(var(--color-primary-container) / 0.5) 0%,
+        rgb(var(--color-tertiary-container) / 0.95) 42%,
+        rgb(var(--color-primary-container) / 0.72) 64%,
+        rgb(var(--color-primary-container) / 0.5) 100%
+      );
+    background-size: 220% 100%;
+    animation: skeleton-nu-shimmer 1.35s ease-in-out infinite;
+  }
+
+  .skeleton-nu-on-primary {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(
+        100deg,
+        rgb(255 255 255 / 0.16) 0%,
+        rgb(255 255 255 / 0.34) 42%,
+        rgb(255 255 255 / 0.22) 64%,
+        rgb(255 255 255 / 0.16) 100%
+      );
+    background-size: 220% 100%;
+    animation: skeleton-nu-shimmer 1.35s ease-in-out infinite;
   }
 
   @keyframes modal-overlay-in {
@@ -75,6 +105,16 @@
     to {
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes skeleton-nu-shimmer {
+    0% {
+      background-position: 120% 0;
+    }
+
+    100% {
+      background-position: -120% 0;
     }
   }
 
