@@ -51,7 +51,7 @@
 
   .modal-panel {
     animation: modal-panel-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    @apply w-full max-w-md overflow-hidden rounded-[1.5rem] bg-surface-container-lowest shadow-editorial;
+    @apply w-full max-w-md rounded-[1.5rem] bg-surface-container-lowest shadow-editorial flex flex-col max-h-[75vh] sm:max-h-[80vh];
   }
 
   .skeleton-nu {

@@ -396,7 +396,7 @@ function EditTransactionModal({
   return (
     <div className="modal-overlay">
       <form className="modal-panel max-w-md" onSubmit={handleSubmit}>
-        <header className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <AppIcon name="edit" />
@@ -411,7 +411,7 @@ function EditTransactionModal({
             </div>
           </div>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
             onClick={onClose}
             type="button"
           >
@@ -419,7 +419,7 @@ function EditTransactionModal({
           </button>
         </header>
 
-        <div className="space-y-4 p-5">
+        <div className="flex-1 overflow-y-auto space-y-4 p-5">
           <Input
             label="Descrição"
             maxLength={160}
@@ -538,6 +538,12 @@ function EditTransactionModal({
             </div>
           </div>
 
+          <Button fullWidth isLoading={isSubmitting} type="submit">
+            Salvar
+          </Button>
+        </div>
+
+        <div className="shrink-0 border-t border-outline-variant/30 bg-surface-container-low px-5 py-4">
           <button
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-error/15 bg-error-container/25 px-4 text-sm font-bold text-error transition hover:bg-error-container/40"
             onClick={() => onDelete(transaction.id)}
@@ -546,15 +552,6 @@ function EditTransactionModal({
             <AppIcon className="h-4 w-4" name="trash" />
             Excluir movimentação
           </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 bg-surface-container-low px-5 py-4">
-          <Button fullWidth variant="secondary" onClick={onClose} type="button">
-            Cancelar
-          </Button>
-          <Button fullWidth isLoading={isSubmitting} type="submit">
-            Salvar
-          </Button>
         </div>
       </form>
 
@@ -587,7 +584,7 @@ function EditCategoryPickerModal({
   return (
     <div className="modal-overlay">
       <div className="modal-panel">
-        <div className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <AppIcon name="tag" />
@@ -597,7 +594,7 @@ function EditCategoryPickerModal({
             </h2>
           </div>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
             onClick={onClose}
             type="button"
           >
@@ -606,7 +603,7 @@ function EditCategoryPickerModal({
         </div>
 
         {categories.length > 0 ? (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto space-y-2 p-4">
             {categories.map((category) => {
               const isSelected = category.id === selectedCategoryId;
               const isIncome = category.tipo === "RECEITA";

@@ -455,7 +455,7 @@ function CategoryFormModal({
         className="modal-panel"
         onSubmit={handleSubmit}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <AppIcon name="tag" />
@@ -465,7 +465,7 @@ function CategoryFormModal({
             </h2>
           </div>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
             onClick={onClose}
             type="button"
           >
@@ -473,7 +473,7 @@ function CategoryFormModal({
           </button>
         </div>
 
-        <div className="space-y-5 p-5">
+        <div className="flex-1 overflow-y-auto space-y-5 p-5">
           <label className="block space-y-2">
             <span className="px-1 text-sm font-medium text-on-surface-variant">
               Nome
@@ -558,7 +558,7 @@ function CategoryFormModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 bg-surface-container-low px-5 py-4">
+        <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-outline-variant/30 bg-surface-container-low px-5 py-4">
           <Button fullWidth variant="secondary" onClick={onClose} type="button">
             Cancelar
           </Button>
@@ -594,7 +594,7 @@ function DeleteCategoryModal({
   return (
     <div className="modal-overlay">
       <div className="modal-panel">
-        <div className="space-y-4 p-5">
+        <div className="flex-1 space-y-4 p-5">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-container/40 text-error">
             <AppIcon name="trash" />
           </div>
@@ -609,7 +609,7 @@ function DeleteCategoryModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 bg-surface-container-low px-5 py-4">
+        <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-outline-variant/30 bg-surface-container-low px-5 py-4">
           <Button fullWidth variant="secondary" onClick={onClose} type="button">
             Cancelar
           </Button>

@@ -416,7 +416,7 @@ function CategoryPickerModal({
   return (
     <div className="modal-overlay">
       <div className="modal-panel">
-        <div className="flex items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-outline-variant/30 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <AppIcon name="tag" />
@@ -426,7 +426,7 @@ function CategoryPickerModal({
             </h2>
           </div>
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-on-surface-variant transition hover:bg-surface-container-low"
             onClick={onClose}
             type="button"
           >
@@ -435,7 +435,7 @@ function CategoryPickerModal({
         </div>
 
         {categories.length > 0 ? (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto space-y-2 p-4">
             {categories.map((category) => {
               const isSelected = category.id === selectedCategoryId;
               const isIncome = category.tipo === "RECEITA";
