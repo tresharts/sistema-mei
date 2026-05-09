@@ -10,6 +10,7 @@ import Modal from "../components/ui/Modal";
 import { notificationPreferences } from "../data/mockData";
 import { ROUTE_PATHS } from "../lib/constants";
 import { api } from "../lib/api";
+import { clearAccessToken } from "../lib/session";
 import {
   categoriesService,
   type CategoryFormPayload,
@@ -123,8 +124,7 @@ function SettingsPage() {
     } catch (error) {
       console.warn("Não foi possível revogar sessão no backend:", error);
     } finally {
-      localStorage.removeItem("acessToken");
-      localStorage.removeItem("refreshToken");
+      clearAccessToken();
       navigate(ROUTE_PATHS.login, { replace: true });
     }
   };

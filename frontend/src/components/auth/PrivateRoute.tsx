@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { refreshSession } from '../../lib/api';
 import { ROUTE_PATHS } from '../../lib/constants';
+import { getAccessToken } from '../../lib/session';
 
 const PrivateRoute = () => {
   const location = useLocation();
@@ -13,9 +14,9 @@ const PrivateRoute = () => {
 
     const verifySession = async () => {
       try {
-        const token = localStorage.getItem('acessToken');
+        const token = getAccessToken();
         
-        if (token && token !== "undefined" && token !== "null") {
+        if (token) {
           if (mounted) setIsAuthenticated(true);
         } else {
           const refreshedToken = await refreshSession();

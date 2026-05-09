@@ -10,6 +10,7 @@ import { ROUTE_PATHS } from "../lib/constants";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { setAccessToken } from "../lib/session";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -47,7 +48,7 @@ function LoginPage() {
       const response = await api.post("/auth/login", data);
       const { acessToken } = response.data;
 
-      localStorage.setItem("acessToken", acessToken);
+      setAccessToken(acessToken);
       
       const from = (location.state as any)?.from || ROUTE_PATHS.dashboard;
 
