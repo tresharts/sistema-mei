@@ -56,3 +56,7 @@ auth:
     path: ${AUTH_REFRESH_COOKIE_PATH:/auth}
     max-age-days: ${AUTH_REFRESH_COOKIE_MAX_AGE_DAYS:30}
     domain: ${AUTH_REFRESH_COOKIE_DOMAIN:}
+  rate-limit:
+    enabled: ${AUTH_RATE_LIMIT_ENABLED:true}
+    max-attempts: ${AUTH_RATE_LIMIT_MAX_ATTEMPTS:20}
+    window: ${AUTH_RATE_LIMIT_WINDOW:PT1M}

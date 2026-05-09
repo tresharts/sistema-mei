@@ -1,6 +1,7 @@
 package com.api.SistemaMEI.config;
 
 import com.api.SistemaMEI.auth.AuthCookieService;
+import com.api.SistemaMEI.auth.AuthRateLimitFilter;
 import com.api.SistemaMEI.auth.AuthResponse;
 import com.api.SistemaMEI.auth.AuthService;
 import com.api.SistemaMEI.auth.SecurityFilter;
@@ -31,6 +32,9 @@ class SecurityConfigTest {
     private SecurityFilter securityFilter;
 
     @Mock
+    private AuthRateLimitFilter authRateLimitFilter;
+
+    @Mock
     private AuthService authService;
 
     @Mock
@@ -43,7 +47,7 @@ class SecurityConfigTest {
 
     @BeforeEach
     void setUp() {
-        securityConfig = new SecurityConfig(securityFilter, authService, authCookieService);
+        securityConfig = new SecurityConfig(securityFilter, authRateLimitFilter, authService, authCookieService);
         ReflectionTestUtils.setField(securityConfig, "frontendUrl", "https://sistemamei.vercel.app");
     }
 
