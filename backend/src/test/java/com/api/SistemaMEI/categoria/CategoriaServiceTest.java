@@ -4,6 +4,7 @@ import com.api.SistemaMEI.exception.BusinessRuleException;
 import com.api.SistemaMEI.exception.ResourceNotFoundException;
 import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
+import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
 import com.api.SistemaMEI.usuario.Usuario;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,9 @@ class CategoriaServiceTest {
 
     @Mock
     private CategoriaRepository repository;
+
+    @Mock
+    private MovimentacaoRepository movimentacaoRepository;
 
     @InjectMocks
     private CategoriaService service;
@@ -177,6 +181,7 @@ class CategoriaServiceTest {
 
         assertEquals("mercado", response.nome());
         verify(repository, never()).existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(any(), any(), any(), any());
+        verify(movimentacaoRepository, never()).existsByCategoria(any());
     }
 
     @Test
@@ -209,6 +214,68 @@ class CategoriaServiceTest {
     }
 
     @Test
+    void deveLancarExcecaoQuandoEditarTipoOuClassificacaoDeCategoriaEmUso() {
+        Usuario usuario = novoUsuario();
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            false
+        );
+        CategoriaRequest request = new CategoriaRequest(
+            "Mercado",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.PESSOAL
+        );
+
+        when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
+        when(movimentacaoRepository.existsByCategoria(categoria)).thenReturn(true);
+
+        BusinessRuleException exception = assertThrows(
+            BusinessRuleException.class,
+            () -> service.editar(categoria.getId(), request, usuario)
+        );
+
+        assertEquals("Categoria em uso não pode alterar tipo ou classificação", exception.getMessage());
+        verify(repository, never()).existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(any(), any(), any(), any());
+        verify(repository, never()).save(any(Categoria.class));
+    }
+
+    @Test
+    void devePermitirEditarTipoEClassificacaoDeCategoriaSemUso() {
+        Usuario usuario = novoUsuario();
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            false
+        );
+        CategoriaRequest request = new CategoriaRequest(
+            "Mercado",
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL
+        );
+
+        when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
+        when(movimentacaoRepository.existsByCategoria(categoria)).thenReturn(false);
+        when(repository.existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(
+            usuario,
+            TipoMovimentacao.RECEITA,
+            ClassificacaoFinanceira.EMPRESARIAL,
+            "Mercado"
+        ))
+            .thenReturn(false);
+        when(repository.save(categoria)).thenReturn(categoria);
+
+        CategoriaResponse response = service.editar(categoria.getId(), request, usuario);
+
+        assertEquals(TipoMovimentacao.RECEITA, response.tipo());
+        assertEquals(ClassificacaoFinanceira.EMPRESARIAL, response.classificacao());
+    }
+
+    @Test
     void deveLancarExcecaoQuandoExcluirCategoriaPadrao() {
         Usuario usuario = novoUsuario();
         Categoria categoria = novaCategoria(
@@ -223,6 +290,49 @@ class CategoriaServiceTest {
 
         assertThrows(BusinessRuleException.class, () -> service.excluir(categoria.getId(), usuario));
         verify(repository, never()).delete(any(Categoria.class));
+        verify(movimentacaoRepository, never()).existsByCategoria(any());
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoExcluirCategoriaEmUso() {
+        Usuario usuario = novoUsuario();
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            false
+        );
+
+        when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
+        when(movimentacaoRepository.existsByCategoria(categoria)).thenReturn(true);
+
+        BusinessRuleException exception = assertThrows(
+            BusinessRuleException.class,
+            () -> service.excluir(categoria.getId(), usuario)
+        );
+
+        assertEquals("Categoria em uso não pode ser excluída", exception.getMessage());
+        verify(repository, never()).delete(any(Categoria.class));
+    }
+
+    @Test
+    void deveExcluirCategoriaNaoPadraoSemUso() {
+        Usuario usuario = novoUsuario();
+        Categoria categoria = novaCategoria(
+            usuario,
+            "Mercado",
+            TipoMovimentacao.DESPESA,
+            ClassificacaoFinanceira.PESSOAL,
+            false
+        );
+
+        when(repository.findByIdAndUsuario(categoria.getId(), usuario)).thenReturn(Optional.of(categoria));
+        when(movimentacaoRepository.existsByCategoria(categoria)).thenReturn(false);
+
+        service.excluir(categoria.getId(), usuario);
+
+        verify(repository).delete(categoria);
     }
 
     @Test

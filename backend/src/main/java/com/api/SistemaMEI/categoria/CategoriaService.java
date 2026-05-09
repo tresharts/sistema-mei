@@ -4,6 +4,7 @@ import com.api.SistemaMEI.exception.BusinessRuleException;
 import com.api.SistemaMEI.exception.ResourceNotFoundException;
 import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
+import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
 import com.api.SistemaMEI.usuario.Usuario;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class CategoriaService {
 
     private final CategoriaRepository repository;
+    private final MovimentacaoRepository movimentacaoRepository;
 
     private CategoriaResponse toResponse(Categoria categoria) {
         return new CategoriaResponse(
@@ -111,6 +113,10 @@ public class CategoriaService {
         boolean mudouTipo = categoria.getTipo() != request.tipo();
         boolean mudouClassificacao = categoria.getClassificacao() != request.classificacao();
 
+        if ((mudouTipo || mudouClassificacao) && movimentacaoRepository.existsByCategoria(categoria)) {
+            throw new BusinessRuleException("Categoria em uso não pode alterar tipo ou classificação");
+        }
+
         if (mudouNome || mudouTipo || mudouClassificacao) {
             boolean existe = repository.existsByUsuarioAndTipoAndClassificacaoAndNomeIgnoreCase(
                 usuario,
@@ -140,6 +146,10 @@ public class CategoriaService {
 
         if (categoria.isPadrao()) {
             throw new BusinessRuleException("Categoria padrão não pode ser excluída");
+        }
+
+        if (movimentacaoRepository.existsByCategoria(categoria)) {
+            throw new BusinessRuleException("Categoria em uso não pode ser excluída");
         }
 
         repository.delete(categoria);
