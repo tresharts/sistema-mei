@@ -40,6 +40,7 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const [showCategoryError, setShowCategoryError] = useState(false);
   const [amountError, setAmountError] = useState("");
+  const [dueDateError, setDueDateError] = useState("");
   const dateInputRef = useRef<HTMLInputElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +66,12 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
 
   const formattedDate = useMemo(() => formatDateBRL(date), [date]);
   const formattedDueDate = useMemo(() => formatDateBRL(dueDate), [dueDate]);
+
+  useEffect(() => {
+    if (status !== "pending" || dueDate) {
+      setDueDateError("");
+    }
+  }, [dueDate, status]);
 
   const validateAmount = (value: string) => {
     const numericValue = Number(value);
@@ -118,15 +125,20 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
       return;
     }
 
-    onSubmit({ 
-        kind, 
-        scope, 
-        amount, 
-        description, 
-        date, 
-        categoryId, 
-        status, 
-        dueDate: status === "pending" ? dueDate : undefined });
+    if (status === "pending" && !dueDate) {
+      setDueDateError("Informe a data de vencimento.");
+      return;
+    }
+    onSubmit({
+      kind,
+      scope,
+      amount,
+      description,
+      date,
+      categoryId,
+      status,
+      dueDate: status === "pending" ? dueDate : undefined
+    });
   };
 
   return (
@@ -337,41 +349,54 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
 
           
           {status === "pending" && (
-             <div className="mt-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 sm:mt-4 sm:space-y-2">
-               <label className="block px-1 text-xs font-medium sm:text-sm">
-                 Data de Vencimento
-               </label>
-               <div className="relative">
-                 <button
-                   className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-error/60 bg-error-container/5 p-3 text-left transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/20 sm:min-h-14 sm:p-4"
-                   onClick={() => {
-                     dueDateInputRef.current?.focus();
-                     (
-                       dueDateInputRef.current as HTMLInputElement & {
-                         showPicker?: () => void;
-                       } | null
-                     )?.showPicker?.();
-                   }}
-                   type="button"
-                 >
-                   <AppIcon className="h-4 w-4 shrink-0 text-error" name="calendar" />
-                   <span className="flex-1 text-center text-sm font-medium text-error">
-                     {dueDate ? formattedDueDate : "Selecionar"}
-                   </span>
-                   <span aria-hidden="true" className="h-4 w-4 shrink-0" />
-                 </button>
-                 <input
-                   ref={dueDateInputRef}
-                   aria-hidden="true"
-                   className="pointer-events-none absolute h-px w-px opacity-0"
-                   tabIndex={-1}
-                   type="date"
-                   required={status === "pending"}
-                   value={dueDate}
-                   onChange={(e) => setDueDate(e.target.value)}
-                 />
-               </div>
-             </div>
+            <div className="mt-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 sm:mt-4 sm:space-y-2">
+              <label className="block px-1 text-xs font-medium sm:text-sm">
+                Data de Vencimento
+              </label>
+              <div className="relative">
+                <button
+                  aria-describedby={dueDateError ? "transaction-due-date-error" : undefined}
+                  aria-invalid={Boolean(dueDateError)}
+                  className={
+                    dueDateError
+                      ? "flex min-h-11 w-full items-center gap-2 rounded-xl border border-error bg-error-container/10 p-3 text-left ring-2 ring-error/30 transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/30 sm:min-h-14 sm:p-4"
+                      : "flex min-h-11 w-full items-center gap-2 rounded-xl border border-error/60 bg-error-container/5 p-3 text-left transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/20 sm:min-h-14 sm:p-4"
+                  }
+                  onClick={() => {
+                    dueDateInputRef.current?.focus();
+                    (
+                      dueDateInputRef.current as HTMLInputElement & {
+                        showPicker?: () => void;
+                      } | null
+                    )?.showPicker?.();
+                  }}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4 shrink-0 text-error" name="calendar" />
+                  <span className="flex-1 text-center text-sm font-medium text-error">
+                    {dueDate ? formattedDueDate : "Selecionar"}
+                  </span>
+                  <span aria-hidden="true" className="h-4 w-4 shrink-0" />
+                </button>
+                <input
+                  ref={dueDateInputRef}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute h-px w-px opacity-0"
+                  tabIndex={-1}
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              {dueDateError ? (
+                <p
+                  className="px-1 text-xs font-medium text-error"
+                  id="transaction-due-date-error"
+                >
+                  {dueDateError}
+                </p>
+              ) : null}
+            </div>
           )}
         </div>
 
