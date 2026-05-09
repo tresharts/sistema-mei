@@ -378,12 +378,15 @@ function EditTransactionModal({
   const [amount, setAmount] = useState(transaction.amount.toString());
   const [amountError, setAmountError] = useState("");
   const [date, setDate] = useState(transaction.date);
+  const [dueDate, setDueDate] = useState(transaction.dueDate ?? "");
+  const [dueDateError, setDueDateError] = useState("");
   const [categoryId, setCategoryId] = useState(transaction.categoryId);
   const [status, setStatus] = useState<"settled" | "pending">(
     transaction.status === "settled" ? "settled" : "pending",
   );
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const dueDateInputRef = useRef<HTMLInputElement>(null);
 
   const apiKind = kindToApi(transaction.kind);
   const apiScope = scopeToApi(transaction.scope);
@@ -408,6 +411,12 @@ function EditTransactionModal({
     }
   }, [categoryId, selectedCategory]);
 
+  useEffect(() => {
+    if (status !== "pending" || dueDate) {
+      setDueDateError("");
+    }
+  }, [dueDate, status]);
+
   const handleAmountChange = (value: string) => {
     const sanitizedValue = value.replace("-", "");
     setAmount(sanitizedValue);
@@ -428,13 +437,18 @@ function EditTransactionModal({
       return;
     }
 
+    if (status === "pending" && !dueDate) {
+      setDueDateError("Informe a data de vencimento.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await onSave(transaction.id, {
         valor: Number(amount),
         descricao: title.trim(),
         data: date,
-        dataVencimento: status === "pending" ? transaction.dueDate ?? date : null,
+        dataVencimento: status === "pending" ? dueDate : null,
         tipo: apiKind,
         classificacao: apiScope,
         status: statusToApi(transaction.kind, status),
@@ -554,9 +568,9 @@ function EditTransactionModal({
             </button>
           </div>
 
-          <div className="space-y-2 rounded-2xl border border-surface-container-high p-3">
-            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-              Status
+	          <div className="space-y-2 rounded-2xl border border-surface-container-high p-3">
+	            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+	              Status
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -580,12 +594,63 @@ function EditTransactionModal({
                 type="button"
               >
                 {transaction.kind === "income" ? "A receber" : "A pagar"}
-              </button>
-            </div>
-          </div>
+	              </button>
+	            </div>
+	          </div>
 
-          <Button fullWidth isLoading={isSubmitting} type="submit">
-            Salvar
+            {status === "pending" ? (
+              <div className="space-y-1.5">
+                <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+                  Data de vencimento
+                </label>
+                <div className="relative">
+                  <button
+                    aria-describedby={dueDateError ? "edit-transaction-due-date-error" : undefined}
+                    aria-invalid={Boolean(dueDateError)}
+                    className={
+                      dueDateError
+                        ? "flex min-h-14 w-full items-center gap-2 rounded-xl border border-error bg-error-container/10 px-4 text-left text-sm ring-2 ring-error/30 transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/30"
+                        : "flex min-h-14 w-full items-center gap-2 rounded-xl border border-error/40 bg-error-container/5 px-4 text-left text-sm transition hover:bg-error-container/15 focus:outline-none focus:ring-2 focus:ring-error/20"
+                    }
+                    onClick={() => {
+                      dueDateInputRef.current?.focus();
+                      (
+                        dueDateInputRef.current as HTMLInputElement & {
+                          showPicker?: () => void;
+                        } | null
+                      )?.showPicker?.();
+                    }}
+                    type="button"
+                  >
+                    <AppIcon className="h-4 w-4 shrink-0 text-error" name="calendar" />
+                    <span className="flex-1 text-center font-medium text-error">
+                      {dueDate ? formatDateBRL(dueDate) : "Selecionar"}
+                    </span>
+                    <span aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  </button>
+                  <input
+                    ref={dueDateInputRef}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute h-px w-px opacity-0"
+                    tabIndex={-1}
+                    type="date"
+                    value={dueDate}
+                    onChange={(event) => setDueDate(event.target.value)}
+                  />
+                </div>
+                {dueDateError ? (
+                  <p
+                    className="px-1 text-xs font-medium text-error"
+                    id="edit-transaction-due-date-error"
+                  >
+                    {dueDateError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+	          <Button fullWidth isLoading={isSubmitting} type="submit">
+	            Salvar
           </Button>
       </Modal>
 
