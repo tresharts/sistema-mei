@@ -140,6 +140,14 @@ Alias aceito:
 
 Como o frontend usa React Router com `BrowserRouter`, o projeto inclui `frontend/vercel.json` para reescrever qualquer rota para `index.html`.
 
+O mesmo `vercel.json` tambem faz proxy da API publicada no Render por baixo do dominio da Vercel:
+
+- `/api/(.*)` -> `https://sistema-mei.onrender.com/$1`
+- `/oauth2/(.*)` -> `https://sistema-mei.onrender.com/oauth2/$1`
+- `/login/oauth2/(.*)` -> `https://sistema-mei.onrender.com/login/oauth2/$1`
+
+Esse proxy e intencional. Ele evita chamadas cross-site no navegador e permite que o cookie HttpOnly de refresh seja usado no fluxo publicado.
+
 Na Vercel, configure:
 
 - `Root Directory`: `frontend`
@@ -147,13 +155,32 @@ Na Vercel, configure:
 - `Output Directory`: `dist`
 - `Install Command`: `pnpm install`
 
-Variavel de ambiente obrigatoria:
+Variavel de ambiente do frontend em producao:
 
 ```env
-VITE_API_URL=https://SEU-BACKEND.onrender.com
+VITE_API_URL=/api
 ```
+
+Tambem e seguro nao configurar `VITE_API_URL` na Vercel, porque o frontend usa `/api` como fallback. Nao aponte `VITE_API_URL` diretamente para o Render em producao, pois isso contorna o proxy e volta a criar fluxo cross-site.
 
 Ajustes necessarios no backend publicado:
 
-- defina `FRONTEND_URL` com a URL final da Vercel, por exemplo `https://seu-projeto.vercel.app`
-- se usar login com Google, adicione essa mesma URL nas configuracoes de redirect/origem autorizada do provedor
+- defina `FRONTEND_URL` com a URL final da Vercel, por exemplo `https://sistemamei.vercel.app`
+- defina `CORS_ORIGIN` com a mesma URL da Vercel
+- defina `AUTH_REFRESH_COOKIE_SECURE=true`
+- defina `AUTH_REFRESH_COOKIE_PATH=/api/auth`
+- mantenha `AUTH_REFRESH_COOKIE_DOMAIN` vazio, para o navegador associar o cookie ao dominio da Vercel
+- use `AUTH_REFRESH_COOKIE_SAME_SITE=Lax` quando o acesso passar pelo proxy da Vercel
+- se usar login com Google, configure os redirects autorizados para a URL publica da Vercel, incluindo `https://sistemamei.vercel.app/login/oauth2/code/google`
+
+Variaveis recomendadas para o Render:
+
+```env
+FRONTEND_URL=https://sistemamei.vercel.app
+CORS_ORIGIN=https://sistemamei.vercel.app
+AUTH_REFRESH_COOKIE_SECURE=true
+AUTH_REFRESH_COOKIE_PATH=/api/auth
+AUTH_REFRESH_COOKIE_SAME_SITE=Lax
+AUTH_REFRESH_COOKIE_DOMAIN=
+JPA_DDL_AUTO=validate
+```
