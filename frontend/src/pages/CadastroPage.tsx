@@ -13,7 +13,10 @@ import { toast } from "sonner";
 const registerSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("E-mail inválido"),
-  senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+  senha: z
+    .string()
+    .min(6, "A senha deve ter no mínimo 6 caracteres")
+    .max(72, "A senha deve ter no máximo 72 caracteres"),
   confirmarSenha: z.string()
 }).refine((data) => data.senha === data.confirmarSenha, {
   message: "As senhas não coincidem",
