@@ -89,7 +89,7 @@ Arquivo padrao de desenvolvimento: `backend/dev.env`
 Exemplo atual:
 
 ```env
-DB_URL=jdbc:h2:file:./target/sistemamei-dev;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1
+DB_URL=jdbc:h2:file:./target/boramei-dev;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1
 DB_USERNAME=sa
 DB_PASSWORD=
 CORS_ORIGIN=http://localhost:5173

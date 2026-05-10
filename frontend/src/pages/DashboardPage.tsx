@@ -24,7 +24,7 @@ const emptySummary: DashboardSummary = {
   alertas: [],
 };
 
-const DASHBOARD_PRIVACY_STORAGE_KEY = "sistema-mei.dashboard.hide-values";
+const DASHBOARD_PRIVACY_STORAGE_KEY = "boramei.dashboard.hide-values";
 const hiddenCurrencyLabel = "R$ ••••••";
 
 function DashboardPage() {

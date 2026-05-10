@@ -1,6 +1,6 @@
 spring:
   application:
-    name: sistema-mei
+    name: boramei
 
   datasource:
     url: ${DB_URL}
