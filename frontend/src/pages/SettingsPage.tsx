@@ -35,7 +35,7 @@ type CategoryModalState =
   | { mode: "create"; category?: undefined }
   | { mode: "edit"; category: TransactionCategory };
 
-type NotificationSettingKey = "lembreteDasAtivo" | "resumoDiarioAtivo";
+type NotificationSettingKey = "lembreteDasAtivo";
 
 type SettingsFormState = {
   nomeNegocio: string;
@@ -157,14 +157,8 @@ function SettingsPage() {
         schedule: "Aviso todo dia 20 de cada mes",
         enabled: settingsForm.lembreteDasAtivo,
       },
-      {
-        id: "resumoDiarioAtivo",
-        title: "Resumo diario",
-        schedule: "Balanco do dia as 19:00",
-        enabled: settingsForm.resumoDiarioAtivo,
-      },
     ],
-    [settingsForm.lembreteDasAtivo, settingsForm.resumoDiarioAtivo],
+    [settingsForm.lembreteDasAtivo],
   );
 
   const userName = settings?.nomeUsuario ?? "Usuário MEI";
