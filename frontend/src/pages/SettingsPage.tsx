@@ -523,14 +523,20 @@ function SettingsPage() {
                   aria-label={`Alternar ${item.title}`}
                   className={
                     item.enabled
-                      ? "flex h-6 w-12 items-center justify-end rounded-full bg-primary px-1 disabled:cursor-not-allowed disabled:opacity-60"
-                      : "flex h-6 w-12 items-center justify-start rounded-full bg-outline-variant/30 px-1 disabled:cursor-not-allowed disabled:opacity-60"
+                      ? "flex h-6 w-12 items-center rounded-full bg-primary px-1 transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60"
+                      : "flex h-6 w-12 items-center rounded-full bg-outline-variant/30 px-1 transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60"
                   }
                   disabled={isLoadingSettings || isSavingSettings}
                   onClick={() => handleToggleNotification(item.id)}
                   type="button"
                 >
-                  <span className="h-4 w-4 rounded-full bg-white shadow-sm" />
+                  <span
+                    className={
+                      item.enabled
+                        ? "h-4 w-4 translate-x-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
+                        : "h-4 w-4 translate-x-0 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
+                    }
+                  />
                 </button>
               </div>
 
