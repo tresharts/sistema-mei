@@ -1,4 +1,4 @@
-import boraMeiLogo from "../../assets/boramei-logo.png";
+import boraMeiLogo from "../../assets/favicon.png";
 import { cn } from "../../lib/cn";
 
 type BrandLogoProps = {
