@@ -1,12 +1,36 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { APP_NAVIGATION, ROUTE_PATHS } from "../../lib/constants";
 import { cn } from "../../lib/cn";
+import {
+  USER_SETTINGS_UPDATED_EVENT,
+  type UserSettingsUpdatedEvent,
+} from "../../lib/settingsEvents";
+import { settingsService } from "../../services/settingsService";
 import AppIcon from "../ui/AppIcon";
 import BottomNav from "./BottomNav";
 import TopAppBar from "./TopAppBar";
 
+const DEFAULT_BUSINESS_NAME = "Meu negócio MEI";
+
+function toBusinessName(nomeNegocio?: string | null) {
+  return nomeNegocio?.trim() || DEFAULT_BUSINESS_NAME;
+}
+
+function getInitials(name: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "ME";
+}
+
 function AppShell() {
   const { pathname } = useLocation();
+  const [businessName, setBusinessName] = useState(DEFAULT_BUSINESS_NAME);
 
   const isDashboard = pathname === ROUTE_PATHS.dashboard;
   const isHistory = pathname === ROUTE_PATHS.history;
@@ -19,7 +43,7 @@ function AppShell() {
       ? "Ajustes"
       : isNewTransaction
         ? "Nova Movimentação"
-        : "Artesa Financeira";
+        : businessName;
 
   const headerVariant: "brand" | "page" | "modal" = isDashboard
     ? "brand"
@@ -27,15 +51,50 @@ function AppShell() {
       ? "modal"
       : "page";
 
+  useEffect(() => {
+    let shouldUpdate = true;
+
+    async function loadBusinessName() {
+      try {
+        const settings = await settingsService.getSettings();
+
+        if (shouldUpdate) {
+          setBusinessName(toBusinessName(settings.nomeNegocio));
+        }
+      } catch {
+        if (shouldUpdate) {
+          setBusinessName(DEFAULT_BUSINESS_NAME);
+        }
+      }
+    }
+
+    function handleSettingsUpdated(event: Event) {
+      const settingsEvent = event as UserSettingsUpdatedEvent;
+      setBusinessName(toBusinessName(settingsEvent.detail.nomeNegocio));
+    }
+
+    loadBusinessName();
+    window.addEventListener(USER_SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
+
+    return () => {
+      shouldUpdate = false;
+      window.removeEventListener(USER_SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="pointer-events-none fixed inset-x-0 top-24 z-0 mx-auto h-40 w-40 max-w-md -translate-x-28 rounded-full bg-primary/5 blur-3xl" />
       <div className="pointer-events-none fixed bottom-0 right-0 z-0 h-48 w-48 rounded-full bg-tertiary-container/10 blur-3xl" />
 
-      <DesktopSidebar />
+      <DesktopSidebar businessName={businessName} />
 
       <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-none lg:pl-56">
-        <TopAppBar title={title} variant={headerVariant} />
+        <TopAppBar
+          brandInitials={getInitials(businessName)}
+          title={title}
+          variant={headerVariant}
+        />
 
         <main
           className={cn(
@@ -66,7 +125,7 @@ function AppShell() {
   );
 }
 
-function DesktopSidebar() {
+function DesktopSidebar({ businessName }: { businessName: string }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-56 border-r border-outline-variant/30 bg-surface-container-lowest px-3 py-6 lg:block">
       <div className="flex h-full flex-col">
@@ -76,7 +135,7 @@ function DesktopSidebar() {
           </div>
           <div className="min-w-0">
             <p className="truncate font-headline text-base font-extrabold text-primary">
-              Artesa Financeira
+              {businessName}
             </p>
             <p className="text-xs text-on-surface-variant">Sistema MEI</p>
           </div>

@@ -10,6 +10,7 @@ import Modal from "../components/ui/Modal";
 import { ROUTE_PATHS } from "../lib/constants";
 import { api } from "../lib/api";
 import { clearAccessToken } from "../lib/session";
+import { USER_SETTINGS_UPDATED_EVENT } from "../lib/settingsEvents";
 import {
   categoriesService,
   type CategoryFormPayload,
@@ -232,6 +233,9 @@ function SettingsPage() {
       setIsSavingSettings(true);
       const updatedSettings = await settingsService.updateSettings(payload);
       applyLoadedSettings(updatedSettings);
+      window.dispatchEvent(
+        new CustomEvent(USER_SETTINGS_UPDATED_EVENT, { detail: updatedSettings }),
+      );
       toast.success("Configurações salvas.");
     } catch (error) {
       toast.error("Erro ao salvar configurações.", {
