@@ -1,4 +1,4 @@
-import type { IconName, SurfaceTone } from "./ui";
+import type { IconName } from "./ui";
 
 export type TransactionKind = "income" | "expense";
 export type TransactionScope = "business" | "personal";
@@ -46,14 +46,6 @@ export interface TransactionItem {
 
 }
 
-export interface DashboardHighlight {
-  label: string;
-  value: number;
-  helperText: string;
-  icon: IconName;
-  tone: SurfaceTone;
-}
-
 export type DashboardAlertSeverity = "INFO" | "WARNING" | "DANGER";
 
 export interface DashboardAlert {
@@ -84,12 +76,6 @@ export interface OverdueAccount {
   categoriaNome: string;
 }
 
-export interface ChartDatum {
-  label: string;
-  incomeHeight: number;
-  expenseHeight: number;
-}
-
 export interface TransactionCategory {
   id: string;
   name: string;
@@ -105,19 +91,4 @@ export interface HistoryGroup {
   label: string;
   dateLabel: string;
   items: TransactionItem[];
-}
-
-export interface SettingsCategory {
-  id: string;
-  name: string;
-  groupLabel: string;
-  icon: IconName;
-  tone: SurfaceTone;
-}
-
-export interface NotificationPreference {
-  id: string;
-  title: string;
-  schedule: string;
-  enabled: boolean;
 }

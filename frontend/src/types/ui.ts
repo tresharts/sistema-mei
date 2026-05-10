@@ -28,11 +28,3 @@ export type IconName =
   | "user"
   | "sale"
   | "box";
-
-
-export type SurfaceTone =
-  | "primary"
-  | "secondary"
-  | "tertiary"
-  | "danger"
-  | "neutral";
