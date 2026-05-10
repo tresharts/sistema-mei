@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,7 +7,6 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import AppIcon from "../components/ui/AppIcon";
 import Modal from "../components/ui/Modal";
-import { notificationPreferences } from "../data/mockData";
 import { ROUTE_PATHS } from "../lib/constants";
 import { api } from "../lib/api";
 import { clearAccessToken } from "../lib/session";
@@ -15,6 +14,11 @@ import {
   categoriesService,
   type CategoryFormPayload,
 } from "../services/categoriesService";
+import {
+  settingsService,
+  type UserSettings,
+  type UserSettingsPayload,
+} from "../services/settingsService";
 import type {
   ApiTransactionKind,
   ApiTransactionScope,
@@ -30,6 +34,24 @@ type ApiErrorResponse = {
 type CategoryModalState =
   | { mode: "create"; category?: undefined }
   | { mode: "edit"; category: TransactionCategory };
+
+type NotificationSettingKey = "lembreteDasAtivo" | "resumoDiarioAtivo";
+
+type SettingsFormState = {
+  nomeNegocio: string;
+  atividade: string;
+  valorDas: string;
+  lembreteDasAtivo: boolean;
+  resumoDiarioAtivo: boolean;
+};
+
+const defaultSettingsForm: SettingsFormState = {
+  nomeNegocio: "",
+  atividade: "",
+  valorDas: "72.00",
+  lembreteDasAtivo: true,
+  resumoDiarioAtivo: false,
+};
 
 function getErrorMessage(error: unknown) {
   if (error instanceof AxiosError) {
@@ -48,18 +70,127 @@ function getCategoryScopeLabel(classificacao: ApiTransactionScope) {
   return classificacao === "EMPRESARIAL" ? "Empresarial" : "Pessoal";
 }
 
+function toDecimalInput(value: number) {
+  return Number(value).toFixed(2);
+}
+
+function toNullableText(value: string) {
+  const trimmedValue = value.trim();
+  return trimmedValue ? trimmedValue : null;
+}
+
+function parseDasValue(value: string) {
+  const parsedValue = Number(value.replace(",", "."));
+
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    throw new Error("Informe um valor de DAS maior que zero.");
+  }
+
+  if (parsedValue > 1000000) {
+    throw new Error("O valor do DAS deve ser menor ou igual a R$ 1.000.000,00.");
+  }
+
+  return Number(parsedValue.toFixed(2));
+}
+
+function toSettingsForm(settings: UserSettings): SettingsFormState {
+  return {
+    nomeNegocio: settings.nomeNegocio ?? "",
+    atividade: settings.atividade ?? "",
+    valorDas: toDecimalInput(settings.valorDas),
+    lembreteDasAtivo: settings.lembreteDasAtivo,
+    resumoDiarioAtivo: settings.resumoDiarioAtivo,
+  };
+}
+
+function toSettingsPayload(form: SettingsFormState): UserSettingsPayload {
+  return {
+    valorDas: parseDasValue(form.valorDas),
+    nomeNegocio: toNullableText(form.nomeNegocio),
+    atividade: toNullableText(form.atividade),
+    lembreteDasAtivo: form.lembreteDasAtivo,
+    resumoDiarioAtivo: form.resumoDiarioAtivo,
+  };
+}
+
+function getInitials(name: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "ME";
+}
+
 function SettingsPage() {
-  const [notifications, setNotifications] = useState(notificationPreferences);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [settingsForm, setSettingsForm] =
+    useState<SettingsFormState>(defaultSettingsForm);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [categoryModal, setCategoryModal] = useState<CategoryModalState | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<TransactionCategory | null>(null);
+  const businessNameInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const customCategoriesCount = useMemo(
     () => categories.filter((category) => !category.isDefault).length,
     [categories],
   );
+
+  const notificationItems = useMemo<
+    Array<{
+      id: NotificationSettingKey;
+      title: string;
+      schedule: string;
+      enabled: boolean;
+    }>
+  >(
+    () => [
+      {
+        id: "lembreteDasAtivo",
+        title: "Lembrete do DAS",
+        schedule: "Aviso todo dia 20 de cada mes",
+        enabled: settingsForm.lembreteDasAtivo,
+      },
+      {
+        id: "resumoDiarioAtivo",
+        title: "Resumo diario",
+        schedule: "Balanco do dia as 19:00",
+        enabled: settingsForm.resumoDiarioAtivo,
+      },
+    ],
+    [settingsForm.lembreteDasAtivo, settingsForm.resumoDiarioAtivo],
+  );
+
+  const userName = settings?.nomeUsuario ?? "Usuário MEI";
+  const businessName = settingsForm.nomeNegocio.trim() || "Meu negócio MEI";
+  const activityName =
+    settingsForm.atividade.trim() || "Microempreendedor individual";
+  const userInitials = getInitials(settingsForm.nomeNegocio || userName);
+
+  function applyLoadedSettings(loadedSettings: UserSettings) {
+    setSettings(loadedSettings);
+    setSettingsForm(toSettingsForm(loadedSettings));
+  }
+
+  async function loadSettings() {
+    try {
+      setIsLoadingSettings(true);
+      const loadedSettings = await settingsService.getSettings();
+      applyLoadedSettings(loadedSettings);
+    } catch (error) {
+      toast.error("Erro ao carregar configurações.", {
+        description: getErrorMessage(error) ?? "Tente novamente em alguns instantes.",
+      });
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }
 
   async function loadCategories() {
     try {
@@ -77,8 +208,49 @@ function SettingsPage() {
   }
 
   useEffect(() => {
+    loadSettings();
     loadCategories();
   }, []);
+
+  const handleSettingsFieldChange = <K extends keyof SettingsFormState>(
+    field: K,
+    value: SettingsFormState[K],
+  ) => {
+    setSettingsForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSaveSettings = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+
+    let payload: UserSettingsPayload;
+    try {
+      payload = toSettingsPayload(settingsForm);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Verifique os dados das configurações.",
+      );
+      return;
+    }
+
+    try {
+      setIsSavingSettings(true);
+      const updatedSettings = await settingsService.updateSettings(payload);
+      applyLoadedSettings(updatedSettings);
+      toast.success("Configurações salvas.");
+    } catch (error) {
+      toast.error("Erro ao salvar configurações.", {
+        description: getErrorMessage(error) ?? "Verifique os dados e tente novamente.",
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleToggleNotification = (field: NotificationSettingKey) => {
+    setSettingsForm((current) => ({ ...current, [field]: !current[field] }));
+  };
 
   const handleSaveCategory = async (payload: CategoryFormPayload) => {
     try {
@@ -135,9 +307,12 @@ function SettingsPage() {
       <section className="space-y-4">
         <div className="flex items-center gap-5 rounded-[1.5rem] rounded-bl-lg bg-surface-container-lowest p-6 shadow-editorial">
           <div className="relative">
-            <Avatar initials="CO" size="lg" />
+            <Avatar initials={userInitials} size="lg" />
             <button
               className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg"
+              aria-label="Editar dados do negócio"
+              disabled={isLoadingSettings}
+              onClick={() => businessNameInputRef.current?.focus()}
               type="button"
             >
               <AppIcon className="h-4 w-4" name="edit" />
@@ -145,14 +320,14 @@ function SettingsPage() {
           </div>
 
           <div className="flex-1">
-            <h2 className="font-headline text-xl font-bold text-on-surface">
-              Atelie Florescer
+            <h2 className="break-words font-headline text-xl font-bold text-on-surface">
+              {isLoadingSettings ? "Carregando..." : businessName}
             </h2>
-            <p className="text-sm font-medium text-on-surface-variant">
-              Clara Oliveira
+            <p className="break-words text-sm font-medium text-on-surface-variant">
+              {userName}
             </p>
-            <span className="mt-2 inline-block rounded-full bg-tertiary-container px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-on-tertiary-container">
-              Artesa individual
+            <span className="mt-2 inline-block max-w-full break-words rounded-full bg-tertiary-container px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-on-tertiary-container">
+              {activityName}
             </span>
           </div>
         </div>
@@ -201,31 +376,73 @@ function SettingsPage() {
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
           <AppIcon className="text-primary" name="document" />
-          <h3 className="font-headline font-bold text-on-surface">Guia DAS</h3>
+          <h3 className="font-headline font-bold text-on-surface">Dados e DAS</h3>
         </div>
 
-        <div className="space-y-4 rounded-2xl bg-surface-container-low p-5">
+        <form
+          className="space-y-4 rounded-2xl bg-surface-container-low p-5"
+          onSubmit={handleSaveSettings}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              ref={businessNameInputRef}
+              disabled={isLoadingSettings || isSavingSettings}
+              label="Nome do negócio"
+              maxLength={120}
+              placeholder="Ex: Atelie Florescer"
+              value={settingsForm.nomeNegocio}
+              onChange={(event) =>
+                handleSettingsFieldChange("nomeNegocio", event.target.value)
+              }
+            />
+            <Input
+              disabled={isLoadingSettings || isSavingSettings}
+              label="Atividade"
+              maxLength={120}
+              placeholder="Ex: Artesa individual"
+              value={settingsForm.atividade}
+              onChange={(event) =>
+                handleSettingsFieldChange("atividade", event.target.value)
+              }
+            />
+          </div>
+
           <label className="block space-y-2">
             <span className="text-sm font-medium text-on-surface-variant">
-              Valor mensal fixo
+              Valor mensal fixo do DAS
             </span>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant">
                 R$
               </span>
               <input
-                className="h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                defaultValue="72.00"
-                type="number"
-                step="0.01"
+                className="h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isLoadingSettings || isSavingSettings}
+                inputMode="decimal"
+                maxLength={13}
+                placeholder="72.00"
+                type="text"
+                value={settingsForm.valorDas}
+                onChange={(event) =>
+                  handleSettingsFieldChange("valorDas", event.target.value)
+                }
               />
             </div>
           </label>
           <p className="px-1 text-[11px] leading-relaxed text-on-surface-variant">
-            Este valor sera usado no futuro para calcular automaticamente os
-            custos fixos obrigatorios do MEI.
+            Este valor sera usado para calcular automaticamente os custos fixos
+            obrigatorios do MEI.
           </p>
-        </div>
+
+          <Button
+            fullWidth
+            disabled={isLoadingSettings}
+            isLoading={isSavingSettings}
+            type="submit"
+          >
+            Salvar configurações
+          </Button>
+        </form>
       </section>
 
       <section className="space-y-3">
@@ -292,7 +509,7 @@ function SettingsPage() {
         </div>
 
         <div className="overflow-hidden rounded-xl bg-surface-container-lowest shadow-editorial">
-          {notifications.map((item, index) => (
+          {notificationItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center justify-between p-4">
                 <div>
@@ -306,30 +523,33 @@ function SettingsPage() {
                   aria-label={`Alternar ${item.title}`}
                   className={
                     item.enabled
-                      ? "flex h-6 w-12 items-center justify-end rounded-full bg-primary px-1"
-                      : "flex h-6 w-12 items-center justify-start rounded-full bg-outline-variant/30 px-1"
+                      ? "flex h-6 w-12 items-center justify-end rounded-full bg-primary px-1 disabled:cursor-not-allowed disabled:opacity-60"
+                      : "flex h-6 w-12 items-center justify-start rounded-full bg-outline-variant/30 px-1 disabled:cursor-not-allowed disabled:opacity-60"
                   }
-                  onClick={() =>
-                    setNotifications((current) =>
-                      current.map((notification) =>
-                        notification.id === item.id
-                          ? { ...notification, enabled: !notification.enabled }
-                          : notification,
-                      ),
-                    )
-                  }
+                  disabled={isLoadingSettings || isSavingSettings}
+                  onClick={() => handleToggleNotification(item.id)}
                   type="button"
                 >
                   <span className="h-4 w-4 rounded-full bg-white shadow-sm" />
                 </button>
               </div>
 
-              {index < notifications.length - 1 ? (
+              {index < notificationItems.length - 1 ? (
                 <div className="mx-4 h-px bg-surface-container-low" />
               ) : null}
             </div>
           ))}
         </div>
+
+        <Button
+          fullWidth
+          disabled={isLoadingSettings}
+          isLoading={isSavingSettings}
+          onClick={() => void handleSaveSettings()}
+          type="button"
+        >
+          Salvar preferências
+        </Button>
       </section>
 
       </div>
