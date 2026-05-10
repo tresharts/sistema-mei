@@ -1,7 +1,10 @@
 package com.api.SistemaMEI.configuracao;
 
 import com.api.SistemaMEI.IntegrationTestBase;
+import com.api.SistemaMEI.auth.RefreshTokenRepository;
 import com.api.SistemaMEI.auth.TokenService;
+import com.api.SistemaMEI.categoria.CategoriaRepository;
+import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
 import com.api.SistemaMEI.usuario.Usuario;
 import com.api.SistemaMEI.usuario.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +42,15 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
     private ConfiguracaoUsuarioRepository configuracaoUsuarioRepository;
 
     @Autowired
+    private MovimentacaoRepository movimentacaoRepository;
+
+    @Autowired
+    private CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     @Autowired
@@ -46,7 +58,10 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void limparBanco() {
+        movimentacaoRepository.deleteAll();
         configuracaoUsuarioRepository.deleteAll();
+        categoriaRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
         usuarioRepository.deleteAll();
     }
 
