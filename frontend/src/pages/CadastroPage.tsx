@@ -77,7 +77,7 @@ function CadastroPage() {
               Criar sua conta
             </h1>
             <p className="text-sm text-on-surface-variant">
-              Junte-se ao Sistema MEI e organize sua Empresa.
+              Junte-se ao BoraMEI e organize sua Empresa.
             </p>
           </div>
         </header>

@@ -87,7 +87,7 @@ function AppShell() {
       <div className="pointer-events-none fixed inset-x-0 top-24 z-0 mx-auto h-40 w-40 max-w-md -translate-x-28 rounded-full bg-primary/5 blur-3xl" />
       <div className="pointer-events-none fixed bottom-0 right-0 z-0 h-48 w-48 rounded-full bg-tertiary-container/10 blur-3xl" />
 
-      <DesktopSidebar businessName={businessName} />
+      <DesktopSidebar />
 
       <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-none lg:pl-56">
         <TopAppBar
@@ -125,7 +125,7 @@ function AppShell() {
   );
 }
 
-function DesktopSidebar({ businessName }: { businessName: string }) {
+function DesktopSidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-56 border-r border-outline-variant/30 bg-surface-container-lowest px-3 py-6 lg:block">
       <div className="flex h-full flex-col">
@@ -135,9 +135,8 @@ function DesktopSidebar({ businessName }: { businessName: string }) {
           </div>
           <div className="min-w-0">
             <p className="truncate font-headline text-base font-extrabold text-primary">
-              {businessName}
+              BoraMEI
             </p>
-            <p className="text-xs text-on-surface-variant">Sistema MEI</p>
           </div>
         </Link>
 

@@ -1,4 +1,4 @@
-# Sistema MEI
+# BoraMEI
 
 Aplicacao web para gestao financeira de microempreendedores (MEI), com frontend em React/Vite e backend em Spring Boot.  
 No fluxo de desenvolvimento local atual, o backend roda com H2 para facilitar testes e execucao rapida sem Docker.

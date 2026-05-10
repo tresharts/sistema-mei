@@ -86,7 +86,7 @@ function LoginPage() {
       <div className="relative mx-auto flex w-full max-w-md flex-col justify-between">
         <section className="space-y-6 pt-6">
           <span className="inline-flex rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-            Sistema MEI
+            BoraMEI
           </span>
 
           <div className="space-y-3">

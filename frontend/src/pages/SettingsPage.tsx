@@ -365,7 +365,7 @@ function SettingsPage() {
           Sair da conta
         </button>
         <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
-          Sistema MEI v0.1.0
+          BoraMEI v0.1.0
         </p>
       </div>
       </div>
