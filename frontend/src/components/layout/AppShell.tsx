@@ -8,6 +8,7 @@ import {
 } from "../../lib/settingsEvents";
 import { settingsService } from "../../services/settingsService";
 import AppIcon from "../ui/AppIcon";
+import BrandLogo from "../ui/BrandLogo";
 import BottomNav from "./BottomNav";
 import TopAppBar from "./TopAppBar";
 
@@ -15,17 +16,6 @@ const DEFAULT_BUSINESS_NAME = "Meu negócio MEI";
 
 function toBusinessName(nomeNegocio?: string | null) {
   return nomeNegocio?.trim() || DEFAULT_BUSINESS_NAME;
-}
-
-function getInitials(name: string) {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-
-  return initials || "ME";
 }
 
 function AppShell() {
@@ -90,11 +80,7 @@ function AppShell() {
       <DesktopSidebar />
 
       <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-none lg:pl-56">
-        <TopAppBar
-          brandInitials={getInitials(businessName)}
-          title={title}
-          variant={headerVariant}
-        />
+        <TopAppBar title={title} variant={headerVariant} />
 
         <main
           className={cn(
@@ -130,9 +116,7 @@ function DesktopSidebar() {
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-56 border-r border-outline-variant/30 bg-surface-container-lowest px-3 py-6 lg:block">
       <div className="flex h-full flex-col">
         <Link className="flex items-center gap-3 rounded-2xl px-2 py-1" to={ROUTE_PATHS.dashboard}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary">
-            <AppIcon name="wallet" />
-          </div>
+          <BrandLogo />
           <div className="min-w-0">
             <p className="truncate font-headline text-base font-extrabold text-primary">
               BoraMEI

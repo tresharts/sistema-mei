@@ -6,6 +6,7 @@ import Input from "../components/ui/Input";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import AppIcon from "../components/ui/AppIcon";
+import BrandLogo from "../components/ui/BrandLogo";
 import { ROUTE_PATHS } from "../lib/constants";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -85,7 +86,8 @@ function LoginPage() {
 
       <div className="relative mx-auto flex w-full max-w-md flex-col justify-between">
         <section className="space-y-6 pt-6">
-          <span className="inline-flex rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 py-1 pl-1 pr-4 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+            <BrandLogo className="h-8 w-8" />
             BoraMEI
           </span>
 

@@ -1,16 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import Avatar from "../ui/Avatar";
 import AppIcon from "../ui/AppIcon";
+import BrandLogo from "../ui/BrandLogo";
 
 type TopAppBarVariant = "brand" | "page" | "modal";
 
 type TopAppBarProps = {
-  brandInitials: string;
   title: string;
   variant: TopAppBarVariant;
 };
 
-function TopAppBar({ brandInitials, title, variant }: TopAppBarProps) {
+function TopAppBar({ title, variant }: TopAppBarProps) {
   const navigate = useNavigate();
 
   if (variant === "modal") {
@@ -38,7 +37,7 @@ function TopAppBar({ brandInitials, title, variant }: TopAppBarProps) {
     <header className="fixed inset-x-0 top-0 z-50 mx-auto h-16 w-full max-w-md bg-background/80 px-6 backdrop-blur-xl shadow-sm shadow-on-surface/5 lg:left-56 lg:mx-0 lg:max-w-none lg:px-6">
       <div className="flex h-full items-center justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <Avatar initials={brandInitials} size="sm" />
+          <BrandLogo className="h-11 w-11" />
           <div className="min-w-0">
             <p className="truncate font-headline text-lg font-extrabold tracking-tight text-primary">
               {title}
