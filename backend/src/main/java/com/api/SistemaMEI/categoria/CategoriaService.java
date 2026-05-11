@@ -47,11 +47,15 @@ public class CategoriaService {
     @Transactional
     public void criarCategoriasPadrao(Usuario usuario) {
         List<Categoria> categoriasPadrao = List.of(
-            novaCategoriaPadrao("Vendas", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
-            novaCategoriaPadrao("Servicos", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Venda de Produto", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Serviço de Decoração", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
             novaCategoriaPadrao("Material", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Ferramentas", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Impostos (DAS)", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Internet", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Luz", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
             novaCategoriaPadrao("Transporte", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
-            novaCategoriaPadrao("Embalagem", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
+            novaCategoriaPadrao("Outros", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.EMPRESARIAL, usuario),
             novaCategoriaPadrao("Salario", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.PESSOAL, usuario),
             novaCategoriaPadrao("Freelance", TipoMovimentacao.RECEITA, ClassificacaoFinanceira.PESSOAL, usuario),
             novaCategoriaPadrao("Alimentacao", TipoMovimentacao.DESPESA, ClassificacaoFinanceira.PESSOAL, usuario),

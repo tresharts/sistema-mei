@@ -3,6 +3,8 @@ package com.api.SistemaMEI.configuracao;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -23,6 +25,11 @@ public record ConfiguracaoUsuarioRequest(
 
     @NotNull(message = "Preferência de lembrete do DAS é obrigatória")
     Boolean lembreteDasAtivo,
+
+    @NotNull(message = "Dia do lembrete do DAS é obrigatório")
+    @Min(value = 1, message = "Dia do lembrete do DAS deve estar entre 1 e 28")
+    @Max(value = 28, message = "Dia do lembrete do DAS deve estar entre 1 e 28")
+    Integer diaLembreteDas,
 
     @NotNull(message = "Preferência de resumo diário é obrigatória")
     Boolean resumoDiarioAtivo

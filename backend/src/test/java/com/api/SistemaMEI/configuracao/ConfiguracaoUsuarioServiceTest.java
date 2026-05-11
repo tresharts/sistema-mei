@@ -43,6 +43,7 @@ class ConfiguracaoUsuarioServiceTest {
 
         assertEquals(new BigDecimal("72.00"), response.valorDas());
         assertTrue(response.lembreteDasAtivo());
+        assertEquals(20, response.diaLembreteDas());
         assertFalse(response.resumoDiarioAtivo());
         assertEquals(usuario.getNome(), response.nomeUsuario());
         assertEquals(usuario.getEmail(), response.emailUsuario());
@@ -58,6 +59,7 @@ class ConfiguracaoUsuarioServiceTest {
             "  Atelie Florescer  ",
             "  Artesa individual  ",
             false,
+            15,
             true
         );
 
@@ -70,6 +72,7 @@ class ConfiguracaoUsuarioServiceTest {
         assertEquals("Atelie Florescer", response.nomeNegocio());
         assertEquals("Artesa individual", response.atividade());
         assertFalse(response.lembreteDasAtivo());
+        assertEquals(15, response.diaLembreteDas());
         assertTrue(response.resumoDiarioAtivo());
     }
 
@@ -82,6 +85,7 @@ class ConfiguracaoUsuarioServiceTest {
             "   ",
             null,
             true,
+            20,
             false
         );
 
@@ -112,6 +116,7 @@ class ConfiguracaoUsuarioServiceTest {
             .nomeNegocio("Negocio antigo")
             .atividade("Atividade antiga")
             .lembreteDasAtivo(true)
+            .diaLembreteDas(20)
             .resumoDiarioAtivo(false)
             .usuario(usuario)
             .build();

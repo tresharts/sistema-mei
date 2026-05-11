@@ -76,6 +76,7 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
             .andExpect(jsonPath("$.emailUsuario").value("maria@teste.com"))
             .andExpect(jsonPath("$.valorDas").value(72.00))
             .andExpect(jsonPath("$.lembreteDasAtivo").value(true))
+            .andExpect(jsonPath("$.diaLembreteDas").value(20))
             .andExpect(jsonPath("$.resumoDiarioAtivo").value(false));
 
         assertEquals(1, configuracaoUsuarioRepository.count());
@@ -89,6 +90,7 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
             "  Atelie Florescer  ",
             "  Artesa individual  ",
             false,
+            12,
             true
         );
 
@@ -101,6 +103,7 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
             .andExpect(jsonPath("$.nomeNegocio").value("Atelie Florescer"))
             .andExpect(jsonPath("$.atividade").value("Artesa individual"))
             .andExpect(jsonPath("$.lembreteDasAtivo").value(false))
+            .andExpect(jsonPath("$.diaLembreteDas").value(12))
             .andExpect(jsonPath("$.resumoDiarioAtivo").value(true));
 
         ConfiguracaoUsuario configuracao = configuracaoUsuarioRepository
@@ -111,6 +114,7 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
         assertEquals("Atelie Florescer", configuracao.getNomeNegocio());
         assertEquals("Artesa individual", configuracao.getAtividade());
         assertFalse(configuracao.isLembreteDasAtivo());
+        assertEquals(12, configuracao.getDiaLembreteDas());
         assertTrue(configuracao.isResumoDiarioAtivo());
     }
 
@@ -123,6 +127,7 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
               "nomeNegocio": "%s",
               "atividade": "Atividade",
               "lembreteDasAtivo": null,
+              "diaLembreteDas": 0,
               "resumoDiarioAtivo": true
             }
             """.formatted("a".repeat(121));
@@ -133,7 +138,7 @@ class ConfiguracaoUsuarioControllerIntegrationTest extends IntegrationTestBase {
                 .content(request))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.title").value("Dados inválidos"))
-            .andExpect(jsonPath("$.erros", hasSize(3)));
+            .andExpect(jsonPath("$.erros", hasSize(4)));
     }
 
     @Test

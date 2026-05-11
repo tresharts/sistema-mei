@@ -78,7 +78,7 @@ function NewTransactionPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-3 sm:space-y-5">
+    <div className="mx-auto max-w-5xl space-y-3 sm:space-y-5">
       <header className="hidden sm:block">
         <h2 className="font-headline text-xl font-bold tracking-tight text-on-surface sm:text-2xl">
           Nova Movimentação

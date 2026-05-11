@@ -12,6 +12,7 @@ public record ConfiguracaoUsuarioResponse(
     String atividade,
     BigDecimal valorDas,
     boolean lembreteDasAtivo,
+    int diaLembreteDas,
     boolean resumoDiarioAtivo,
     LocalDateTime atualizadoEm
 ) {}

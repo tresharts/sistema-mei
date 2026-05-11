@@ -54,16 +54,20 @@ class CategoriaServiceTest {
             .stream(categoriasCaptor.getValue().spliterator(), false)
             .toList();
 
-        assertEquals(11, categorias.size());
+        assertEquals(15, categorias.size());
         assertTrue(categorias.stream().allMatch(Categoria::isPadrao));
         assertTrue(categorias.stream().allMatch(categoria -> categoria.getUsuario().equals(usuario)));
         assertEquals(
             List.of(
-                "Vendas",
-                "Servicos",
+                "Venda de Produto",
+                "Serviço de Decoração",
                 "Material",
+                "Ferramentas",
+                "Impostos (DAS)",
+                "Internet",
+                "Luz",
                 "Transporte",
-                "Embalagem",
+                "Outros",
                 "Salario",
                 "Freelance",
                 "Alimentacao",
@@ -73,7 +77,7 @@ class CategoriaServiceTest {
             ),
             categorias.stream().map(Categoria::getNome).toList()
         );
-        assertEquals(5, categorias.stream()
+        assertEquals(9, categorias.stream()
             .filter(categoria -> categoria.getClassificacao() == ClassificacaoFinanceira.EMPRESARIAL)
             .count());
         assertEquals(6, categorias.stream()
@@ -91,7 +95,7 @@ class CategoriaServiceTest {
             usuario,
             TipoMovimentacao.RECEITA,
             ClassificacaoFinanceira.EMPRESARIAL,
-            "Vendas"
+            "Venda de Produto"
         )).thenReturn(true);
 
         service.criarCategoriasPadrao(usuario);
@@ -102,8 +106,8 @@ class CategoriaServiceTest {
             .stream(categoriasCaptor.getValue().spliterator(), false)
             .toList();
 
-        assertEquals(10, categorias.size());
-        assertFalse(categorias.stream().anyMatch(categoria -> categoria.getNome().equals("Vendas")));
+        assertEquals(14, categorias.size());
+        assertFalse(categorias.stream().anyMatch(categoria -> categoria.getNome().equals("Venda de Produto")));
     }
 
     @Test

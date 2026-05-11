@@ -38,6 +38,9 @@ public class ConfiguracaoUsuario extends BaseEntity {
     private boolean lembreteDasAtivo;
 
     @Column(nullable = false)
+    private int diaLembreteDas;
+
+    @Column(nullable = false)
     private boolean resumoDiarioAtivo;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)

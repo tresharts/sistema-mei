@@ -14,6 +14,7 @@ import java.math.RoundingMode;
 public class ConfiguracaoUsuarioService {
 
     private static final BigDecimal VALOR_DAS_PADRAO = new BigDecimal("72.00");
+    private static final int DIA_LEMBRETE_DAS_PADRAO = 20;
 
     private final ConfiguracaoUsuarioRepository repository;
 
@@ -31,6 +32,7 @@ public class ConfiguracaoUsuarioService {
         configuracao.setNomeNegocio(normalizarTexto(request.nomeNegocio()));
         configuracao.setAtividade(normalizarTexto(request.atividade()));
         configuracao.setLembreteDasAtivo(request.lembreteDasAtivo());
+        configuracao.setDiaLembreteDas(request.diaLembreteDas());
         configuracao.setResumoDiarioAtivo(request.resumoDiarioAtivo());
 
         ConfiguracaoUsuario configuracaoSalva = repository.save(configuracao);
@@ -44,6 +46,7 @@ public class ConfiguracaoUsuarioService {
                 .builder()
                 .valorDas(VALOR_DAS_PADRAO)
                 .lembreteDasAtivo(true)
+                .diaLembreteDas(DIA_LEMBRETE_DAS_PADRAO)
                 .resumoDiarioAtivo(false)
                 .usuario(usuario)
                 .build()));
@@ -60,6 +63,7 @@ public class ConfiguracaoUsuarioService {
             configuracao.getAtividade(),
             configuracao.getValorDas(),
             configuracao.isLembreteDasAtivo(),
+            configuracao.getDiaLembreteDas(),
             configuracao.isResumoDiarioAtivo(),
             configuracao.getAtualizadoEm()
         );

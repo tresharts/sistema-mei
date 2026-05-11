@@ -6,6 +6,8 @@ import com.api.SistemaMEI.financeiro.TipoMovimentacao;
 import com.api.SistemaMEI.movimentacao.Movimentacao;
 import com.api.SistemaMEI.movimentacao.MovimentacaoRepository;
 import com.api.SistemaMEI.notificacao.AlertaService;
+import com.api.SistemaMEI.configuracao.ConfiguracaoUsuario;
+import com.api.SistemaMEI.configuracao.ConfiguracaoUsuarioRepository;
 import com.api.SistemaMEI.usuario.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ public class DashboardService {
 
     private final MovimentacaoRepository movimentacaoRepository;
     private final AlertaService alertaService;
+    private final ConfiguracaoUsuarioRepository configuracaoUsuarioRepository;
 
     @Transactional(readOnly = true)
     public ResumoResponse buscarResumo(Usuario usuario, ClassificacaoFinanceira classificacao) {
@@ -69,6 +72,9 @@ public class DashboardService {
                 classificacao,
                 hoje
             );
+        ConfiguracaoUsuario configuracao = configuracaoUsuarioRepository.findByUsuario(usuario).orElse(null);
+        boolean lembreteDasAtivo = configuracao == null || configuracao.isLembreteDasAtivo();
+        Integer diaLembreteDas = configuracao != null ? configuracao.getDiaLembreteDas() : null;
 
         return new ResumoResponse(
             saldoAtual,
@@ -77,7 +83,12 @@ public class DashboardService {
             totalAPagar,
             vendasHoje,
             quantidadeContasAReceberAtrasadas,
-            alertaService.listarAlertasAtivos(hoje, quantidadeContasAReceberAtrasadas)
+            alertaService.listarAlertasAtivos(
+                hoje,
+                quantidadeContasAReceberAtrasadas,
+                lembreteDasAtivo,
+                diaLembreteDas
+            )
         );
     }
 

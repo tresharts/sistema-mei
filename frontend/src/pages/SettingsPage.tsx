@@ -43,6 +43,7 @@ type SettingsFormState = {
   atividade: string;
   valorDas: string;
   lembreteDasAtivo: boolean;
+  diaLembreteDas: string;
   resumoDiarioAtivo: boolean;
 };
 
@@ -51,6 +52,7 @@ const defaultSettingsForm: SettingsFormState = {
   atividade: "",
   valorDas: "72.00",
   lembreteDasAtivo: true,
+  diaLembreteDas: "20",
   resumoDiarioAtivo: false,
 };
 
@@ -94,6 +96,16 @@ function parseDasValue(value: string) {
   return Number(parsedValue.toFixed(2));
 }
 
+function parseDiaLembreteDas(value: string) {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 28) {
+    throw new Error("Informe um dia de lembrete do DAS entre 1 e 28.");
+  }
+
+  return parsedValue;
+}
+
 function sortCategoriesByName(a: TransactionCategory, b: TransactionCategory) {
   return a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
 }
@@ -104,6 +116,7 @@ function toSettingsForm(settings: UserSettings): SettingsFormState {
     atividade: settings.atividade ?? "",
     valorDas: toDecimalInput(settings.valorDas),
     lembreteDasAtivo: settings.lembreteDasAtivo,
+    diaLembreteDas: String(settings.diaLembreteDas),
     resumoDiarioAtivo: settings.resumoDiarioAtivo,
   };
 }
@@ -114,6 +127,7 @@ function toSettingsPayload(form: SettingsFormState): UserSettingsPayload {
     nomeNegocio: toNullableText(form.nomeNegocio),
     atividade: toNullableText(form.atividade),
     lembreteDasAtivo: form.lembreteDasAtivo,
+    diaLembreteDas: parseDiaLembreteDas(form.diaLembreteDas),
     resumoDiarioAtivo: form.resumoDiarioAtivo,
   };
 }
@@ -177,11 +191,11 @@ function SettingsPage() {
       {
         id: "lembreteDasAtivo",
         title: "Lembrete do DAS",
-        schedule: "Aviso todo dia 20 de cada mes",
+        schedule: `Aviso todo dia ${settingsForm.diaLembreteDas} de cada mês`,
         enabled: settingsForm.lembreteDasAtivo,
       },
     ],
-    [settingsForm.lembreteDasAtivo],
+    [settingsForm.diaLembreteDas, settingsForm.lembreteDasAtivo],
   );
 
   const userName = settings?.nomeUsuario ?? "Usuário MEI";
@@ -319,7 +333,7 @@ function SettingsPage() {
       toast.error("Erro ao excluir categoria.", {
         description:
           getErrorMessage(error) ??
-          "Categorias vinculadas a movimentacoes podem exigir ajustes antes da exclusao.",
+          "Categorias vinculadas a movimentações podem exigir ajustes antes da exclusão.",
       });
     }
   };
@@ -367,7 +381,7 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl bg-primary/5 p-6">
+      <section className="hidden space-y-4 rounded-2xl bg-primary/5 p-6 lg:block">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
             <AppIcon className="text-primary" name="heart" />
@@ -391,7 +405,7 @@ function SettingsPage() {
         </button>
       </section>
 
-      <div className="space-y-6 pb-8 pt-2">
+      <div className="hidden space-y-6 pb-8 pt-2 lg:block">
         <button
           onClick={handleLogout}
           className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
@@ -585,6 +599,30 @@ function SettingsPage() {
           ))}
         </div>
 
+        <label className="block space-y-2">
+          <span className="px-1 text-sm font-medium text-on-surface-variant">
+            Dia do lembrete do DAS
+          </span>
+          <input
+            className="h-12 w-full rounded-xl border-none bg-surface-container-low px-4 text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isLoadingSettings || isSavingSettings}
+            inputMode="numeric"
+            max={28}
+            min={1}
+            type="number"
+            value={settingsForm.diaLembreteDas}
+            onChange={(event) =>
+              handleSettingsFieldChange(
+                "diaLembreteDas",
+                event.target.value.replace(/\D/g, "").slice(0, 2),
+              )
+            }
+          />
+          <p className="px-1 text-[11px] text-on-surface-variant">
+            Escolha um dia entre 1 e 28.
+          </p>
+        </label>
+
         <Button
           fullWidth
           disabled={isLoadingSettings}
@@ -595,6 +633,44 @@ function SettingsPage() {
           Salvar preferências
         </Button>
       </section>
+
+      <section className="space-y-4 rounded-2xl bg-primary/5 p-6 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <AppIcon className="text-primary" name="heart" />
+          </div>
+          <div>
+            <h3 className="font-headline font-bold text-on-surface">
+              Alguma dúvida?
+            </h3>
+            <p className="text-xs text-on-surface-variant">
+              Estamos aqui para cuidar do seu negócio.
+            </p>
+          </div>
+        </div>
+
+        <button
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
+          type="button"
+        >
+          <AppIcon className="h-4 w-4" name="chat" />
+          Conversar com suporte
+        </button>
+      </section>
+
+      <div className="space-y-6 pb-8 pt-2 lg:hidden">
+        <button
+          onClick={handleLogout}
+          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
+          type="button"
+        >
+          <AppIcon name="logout" />
+          Sair da conta
+        </button>
+        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
+          BoraMEI v0.1.0
+        </p>
+      </div>
 
       </div>
 

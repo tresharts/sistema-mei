@@ -86,7 +86,7 @@ function AppShell() {
           className={cn(
             "relative z-10 mx-auto w-full px-6",
             isNewTransaction
-              ? "pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
+              ? "pb-4 pt-20 lg:max-w-[72rem] lg:px-8 lg:pb-8 lg:pt-24"
               : "pb-32 pt-24 lg:px-8 lg:pb-8",
             !isNewTransaction && "lg:max-w-[64rem]",
           )}

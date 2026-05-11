@@ -1,6 +1,8 @@
 package com.api.SistemaMEI.dashboard;
 
 import com.api.SistemaMEI.categoria.Categoria;
+import com.api.SistemaMEI.configuracao.ConfiguracaoUsuario;
+import com.api.SistemaMEI.configuracao.ConfiguracaoUsuarioRepository;
 import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.StatusMovimentacao;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
@@ -24,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,6 +41,9 @@ class DashboardServiceTest {
 
     @Mock
     private AlertaService alertaService;
+
+    @Mock
+    private ConfiguracaoUsuarioRepository configuracaoUsuarioRepository;
 
     @InjectMocks
     private DashboardService service;
@@ -104,7 +110,13 @@ class DashboardServiceTest {
             null,
             hoje
         )).thenReturn(2L);
-        when(alertaService.listarAlertasAtivos(hoje, 2L))
+        when(configuracaoUsuarioRepository.findByUsuario(usuario))
+            .thenReturn(Optional.of(ConfiguracaoUsuario.builder()
+                .lembreteDasAtivo(true)
+                .diaLembreteDas(20)
+                .usuario(usuario)
+                .build()));
+        when(alertaService.listarAlertasAtivos(hoje, 2L, true, 20))
             .thenReturn(List.of(new AlertaResponse(
                 TipoAlerta.CONTAS_A_RECEBER_ATRASADAS.name(),
                 "Voce tem 2 contas atrasadas",

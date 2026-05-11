@@ -8,6 +8,7 @@ export type UserSettings = {
   atividade: string | null;
   valorDas: number;
   lembreteDasAtivo: boolean;
+  diaLembreteDas: number;
   resumoDiarioAtivo: boolean;
   atualizadoEm: string | null;
 };
@@ -17,6 +18,7 @@ export type UserSettingsPayload = {
   nomeNegocio: string | null;
   atividade: string | null;
   lembreteDasAtivo: boolean;
+  diaLembreteDas: number;
   resumoDiarioAtivo: boolean;
 };
 

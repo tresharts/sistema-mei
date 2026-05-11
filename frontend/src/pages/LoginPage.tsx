@@ -81,10 +81,10 @@ function LoginPage() {
 
   return (
     <main className="min-h-screen bg-background lg:grid lg:grid-cols-2">
-      <section className="flex min-h-[42vh] items-center justify-center bg-surface-container-low px-6 py-8 lg:min-h-screen lg:px-12">
+      <section className="min-h-[42vh] overflow-hidden bg-surface-container-low lg:min-h-screen">
         <img
           alt="BoraMEI"
-          className="h-auto w-full max-w-[19rem] object-contain sm:max-w-sm lg:max-w-xl"
+          className="h-full w-full object-cover"
           src={boraMeiLogo}
         />
       </section>

@@ -103,7 +103,7 @@ function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="relative grid grid-cols-2 gap-2 overflow-hidden rounded-2xl bg-surface-container-low p-1.5">
         <span
           className={cn(
@@ -138,7 +138,7 @@ function DashboardPage() {
       <div
         key={selectedScope}
         className={cn(
-          "space-y-8 animate-in fade-in duration-300",
+          "space-y-6 animate-in fade-in duration-300",
           transitionDirection === "right"
             ? "slide-in-from-right-5"
             : "slide-in-from-left-5",
@@ -232,7 +232,7 @@ function DashboardPage() {
 
       <AlertSection alerts={summary.alertas} isLoading={isLoading} />
 
-      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <h3 className="font-headline text-lg font-bold text-on-surface">
