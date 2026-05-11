@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { formatDateBRL } from "../../lib/format";
 import { dashboardService } from "../../services/dashboardService";
 import type { DashboardAlert } from "../../types/finance";
+import favicon from "../../assets/favicon.png";
 import AppIcon from "../ui/AppIcon";
 
 type TopAppBarVariant = "brand" | "page" | "modal";
@@ -89,8 +90,13 @@ function TopAppBar({ title, variant }: TopAppBarProps) {
     <header className="fixed inset-x-0 top-0 z-50 mx-auto h-16 w-full max-w-md bg-background/80 px-6 backdrop-blur-xl shadow-sm shadow-on-surface/5 lg:left-56 lg:mx-0 lg:w-auto lg:max-w-none lg:px-6">
       <div className="flex h-full w-full items-center pr-12">
         <div className="flex min-w-0 flex-1 items-center">
+          <img
+            alt="BoraMEI"
+            className="mr-2 h-7 w-7 shrink-0 object-contain lg:hidden"
+            src={favicon}
+          />
           <div className="min-w-0">
-            <p className="truncate font-headline text-lg font-extrabold tracking-tight text-primary">
+            <p className="mt-2 truncate font-headline text-lg font-extrabold tracking-tight text-primary lg:mt-0">
               {title}
             </p>
           </div>
