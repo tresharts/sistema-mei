@@ -7,6 +7,8 @@ import { formatDateBRL } from "../../lib/format";
 import type { TransactionCategory } from "../../types/finance";
 
 const MAX_TRANSACTION_AMOUNT = 1_000_000;
+const MAX_AMOUNT_CENTS = MAX_TRANSACTION_AMOUNT * 100;
+const MAX_AMOUNT_DIGITS = 9;
 
 export interface TransactionFormData {
   kind: "income" | "expense";
@@ -27,12 +29,38 @@ interface TransactionFormProps {
 }
 
 export default function TransactionForm({ initialData, categories, onSubmit, isLoading }: TransactionFormProps) {
+  const toAmountDigits = (value?: string) => {
+    if (!value) return "";
+
+    const normalizedValue = value.replace(",", ".");
+    const numericValue = Number(normalizedValue);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      return "";
+    }
+
+    const cents = Math.round(numericValue * 100);
+    return String(cents).replace(/\D/g, "").slice(0, MAX_AMOUNT_DIGITS);
+  };
+
+  const toAmountNumber = (digits: string) => {
+    if (!digits) return 0;
+    return Number(digits) / 100;
+  };
+
+  const formatAmountDigits = (digits: string) => {
+    const value = toAmountNumber(digits);
+    return value.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
 
   const [kind, setKind] = useState<"income" | "expense">(initialData?.kind || "income");
   const [scope, setScope] = useState<"business" | "personal">(initialData?.scope || "business");
   const [status, setStatus] = useState<"settled" | "pending">(initialData?.status || "settled");
   
-  const [amount, setAmount] = useState(initialData?.amount || "");
+  const [amount, setAmount] = useState(toAmountDigits(initialData?.amount));
   const [description, setDescription] = useState(initialData?.description || "");
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
@@ -74,7 +102,7 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   }, [dueDate, status]);
 
   const validateAmount = (value: string) => {
-    const numericValue = Number(value);
+    const numericValue = toAmountNumber(value);
 
     if (!value || !Number.isFinite(numericValue)) {
       return "Informe um valor válido.";
@@ -92,7 +120,14 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   };
 
   const handleAmountChange = (value: string) => {
-    const sanitizedValue = value.replace("-", "");
+    const sanitizedValue = value
+      .replace(/\D/g, "")
+      .slice(0, MAX_AMOUNT_DIGITS);
+    if (sanitizedValue && Number(sanitizedValue) > MAX_AMOUNT_CENTS) {
+      setAmountError("O valor máximo por movimentação é R$ 1.000.000,00.");
+      return;
+    }
+
     setAmount(sanitizedValue);
     setAmountError(sanitizedValue ? validateAmount(sanitizedValue) : "");
   };
@@ -132,7 +167,7 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
     onSubmit({
       kind,
       scope,
-      amount,
+      amount: toAmountNumber(amount).toFixed(2),
       description,
       date,
       categoryId,
@@ -179,15 +214,33 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
           <input
             className="w-full bg-transparent text-center font-headline text-4xl font-extrabold text-on-surface focus:outline-none placeholder-on-surface-variant/30 sm:text-5xl"
             placeholder="0,00"
-            type="number"
-            step="0.01"
-            min="0.01"
-            max={MAX_TRANSACTION_AMOUNT}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             required
-            value={amount}
+            value={formatAmountDigits(amount)}
             onKeyDown={(event) => {
-              if (["-", "+", "e", "E"].includes(event.key)) {
+              if (event.ctrlKey || event.metaKey) {
+                return;
+              }
+
+              const isControlKey = [
+                "Backspace",
+                "Delete",
+                "ArrowLeft",
+                "ArrowRight",
+                "Tab",
+                "Home",
+                "End",
+              ].includes(event.key);
+
+              if (isControlKey) {
+                return;
+              }
+
+              if (!/^\d$/.test(event.key)) {
                 event.preventDefault();
+                return;
               }
             }}
             onChange={(e) => handleAmountChange(e.target.value)}
