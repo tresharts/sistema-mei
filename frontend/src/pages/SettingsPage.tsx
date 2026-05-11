@@ -94,6 +94,10 @@ function parseDasValue(value: string) {
   return Number(parsedValue.toFixed(2));
 }
 
+function sortCategoriesByName(a: TransactionCategory, b: TransactionCategory) {
+  return a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
+}
+
 function toSettingsForm(settings: UserSettings): SettingsFormState {
   return {
     nomeNegocio: settings.nomeNegocio ?? "",
@@ -145,6 +149,20 @@ function SettingsPage() {
   const customCategories = useMemo(
     () => categories.filter((category) => !category.isDefault),
     [categories],
+  );
+  const customIncomeCategories = useMemo(
+    () =>
+      customCategories
+        .filter((category) => category.tipo === "RECEITA")
+        .sort(sortCategoriesByName),
+    [customCategories],
+  );
+  const customExpenseCategories = useMemo(
+    () =>
+      customCategories
+        .filter((category) => category.tipo === "DESPESA")
+        .sort(sortCategoriesByName),
+    [customCategories],
   );
 
   const notificationItems = useMemo<
@@ -257,15 +275,25 @@ function SettingsPage() {
   const handleSaveCategory = async (payload: CategoryFormPayload) => {
     try {
       if (categoryModal?.mode === "edit") {
-        await categoriesService.updateCategory(categoryModal.category.id, payload);
+        const updatedCategory = await categoriesService.updateCategory(
+          categoryModal.category.id,
+          payload,
+        );
+        setCategories((current) =>
+          current.map((category) =>
+            category.id === updatedCategory.id ? updatedCategory : category,
+          ),
+        );
         toast.success("Categoria atualizada.");
       } else {
-        await categoriesService.createCategory(payload);
+        const createdCategory = await categoriesService.createCategory(payload);
+        setCategories((current) =>
+          [...current, createdCategory].sort(sortCategoriesByName),
+        );
         toast.success("Categoria criada.");
       }
 
       setCategoryModal(null);
-      await loadCategories();
     } catch (error) {
       toast.error("Erro ao salvar categoria.", {
         description: getErrorMessage(error) ?? "Verifique os dados e tente novamente.",
@@ -278,11 +306,15 @@ function SettingsPage() {
       return;
     }
 
+    const categoryId = categoryToDelete.id;
+
     try {
-      await categoriesService.deleteCategory(categoryToDelete.id);
+      await categoriesService.deleteCategory(categoryId);
+      setCategories((current) =>
+        current.filter((category) => category.id !== categoryId),
+      );
       toast.success("Categoria excluída.");
       setCategoryToDelete(null);
-      await loadCategories();
     } catch (error) {
       toast.error("Erro ao excluir categoria.", {
         description:
@@ -477,16 +509,20 @@ function SettingsPage() {
               />
             ))}
           </div>
-        ) : customCategories.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {customCategories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onDelete={() => setCategoryToDelete(category)}
-                onEdit={() => setCategoryModal({ mode: "edit", category })}
-              />
-            ))}
+        ) : customCategoriesCount > 0 ? (
+          <div className="space-y-5">
+            <CategoryListGroup
+              categories={customIncomeCategories}
+              title="Receita"
+              onDelete={(category) => setCategoryToDelete(category)}
+              onEdit={(category) => setCategoryModal({ mode: "edit", category })}
+            />
+            <CategoryListGroup
+              categories={customExpenseCategories}
+              title="Despesa"
+              onDelete={(category) => setCategoryToDelete(category)}
+              onEdit={(category) => setCategoryModal({ mode: "edit", category })}
+            />
           </div>
         ) : (
           <div className="rounded-xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
@@ -642,6 +678,46 @@ function CategoryCard({
         {getCategoryGroupLabel(category.tipo)} • {getCategoryScopeLabel(category.classificacao)}
       </p>
     </article>
+  );
+}
+
+function CategoryListGroup({
+  categories,
+  title,
+  onDelete,
+  onEdit,
+}: {
+  categories: TransactionCategory[];
+  title: "Receita" | "Despesa";
+  onDelete: (category: TransactionCategory) => void;
+  onEdit: (category: TransactionCategory) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-1">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">
+          {title}
+        </h4>
+        <span className="text-xs text-on-surface-variant">{categories.length}</span>
+      </div>
+
+      {categories.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {categories.map((category) => (
+            <CategoryCard
+              key={category.id}
+              category={category}
+              onDelete={() => onDelete(category)}
+              onEdit={() => onEdit(category)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl bg-surface-container-low p-4 text-xs text-on-surface-variant">
+          Nenhuma categoria personalizada de {title.toLowerCase()}.
+        </div>
+      )}
+    </div>
   );
 }
 
