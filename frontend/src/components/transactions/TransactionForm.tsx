@@ -7,6 +7,8 @@ import { formatDateBRL } from "../../lib/format";
 import type { TransactionCategory } from "../../types/finance";
 
 const MAX_TRANSACTION_AMOUNT = 1_000_000;
+const MAX_AMOUNT_CENTS = MAX_TRANSACTION_AMOUNT * 100;
+const MAX_AMOUNT_DIGITS = 9;
 
 export interface TransactionFormData {
   kind: "income" | "expense";
@@ -27,12 +29,38 @@ interface TransactionFormProps {
 }
 
 export default function TransactionForm({ initialData, categories, onSubmit, isLoading }: TransactionFormProps) {
+  const toAmountDigits = (value?: string) => {
+    if (!value) return "";
+
+    const normalizedValue = value.replace(",", ".");
+    const numericValue = Number(normalizedValue);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      return "";
+    }
+
+    const cents = Math.round(numericValue * 100);
+    return String(cents).replace(/\D/g, "").slice(0, MAX_AMOUNT_DIGITS);
+  };
+
+  const toAmountNumber = (digits: string) => {
+    if (!digits) return 0;
+    return Number(digits) / 100;
+  };
+
+  const formatAmountDigits = (digits: string) => {
+    const value = toAmountNumber(digits);
+    return value.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
 
   const [kind, setKind] = useState<"income" | "expense">(initialData?.kind || "income");
   const [scope, setScope] = useState<"business" | "personal">(initialData?.scope || "business");
   const [status, setStatus] = useState<"settled" | "pending">(initialData?.status || "settled");
   
-  const [amount, setAmount] = useState(initialData?.amount || "");
+  const [amount, setAmount] = useState(toAmountDigits(initialData?.amount));
   const [description, setDescription] = useState(initialData?.description || "");
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
@@ -40,6 +68,7 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const [showCategoryError, setShowCategoryError] = useState(false);
   const [amountError, setAmountError] = useState("");
+  const [dueDateError, setDueDateError] = useState("");
   const dateInputRef = useRef<HTMLInputElement>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,8 +95,14 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   const formattedDate = useMemo(() => formatDateBRL(date), [date]);
   const formattedDueDate = useMemo(() => formatDateBRL(dueDate), [dueDate]);
 
+  useEffect(() => {
+    if (status !== "pending" || dueDate) {
+      setDueDateError("");
+    }
+  }, [dueDate, status]);
+
   const validateAmount = (value: string) => {
-    const numericValue = Number(value);
+    const numericValue = toAmountNumber(value);
 
     if (!value || !Number.isFinite(numericValue)) {
       return "Informe um valor válido.";
@@ -85,7 +120,14 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
   };
 
   const handleAmountChange = (value: string) => {
-    const sanitizedValue = value.replace("-", "");
+    const sanitizedValue = value
+      .replace(/\D/g, "")
+      .slice(0, MAX_AMOUNT_DIGITS);
+    if (sanitizedValue && Number(sanitizedValue) > MAX_AMOUNT_CENTS) {
+      setAmountError("O valor máximo por movimentação é R$ 1.000.000,00.");
+      return;
+    }
+
     setAmount(sanitizedValue);
     setAmountError(sanitizedValue ? validateAmount(sanitizedValue) : "");
   };
@@ -118,19 +160,24 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
       return;
     }
 
-    onSubmit({ 
-        kind, 
-        scope, 
-        amount, 
-        description, 
-        date, 
-        categoryId, 
-        status, 
-        dueDate: status === "pending" ? dueDate : undefined });
+    if (status === "pending" && !dueDate) {
+      setDueDateError("Informe a data de vencimento.");
+      return;
+    }
+    onSubmit({
+      kind,
+      scope,
+      amount: toAmountNumber(amount).toFixed(2),
+      description,
+      date,
+      categoryId,
+      status,
+      dueDate: status === "pending" ? dueDate : undefined
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-10">
+    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
       <div className="rounded-2xl bg-surface-container-high p-1 sm:p-1.5">
         <div className="grid grid-cols-2 gap-1.5">
           <button
@@ -158,233 +205,265 @@ export default function TransactionForm({ initialData, categories, onSubmit, isL
         </div>
       </div>
 
-      <div className="text-center">
-        <label className="mb-1 block text-xs font-medium text-on-surface-variant sm:mb-2 sm:text-sm">
-          {kind === "income" ? "Quanto entrou?" : "Quanto saiu?"}
-        </label>
-        <div className="flex items-baseline justify-center gap-1">
-          <span className="font-headline text-xl font-bold text-primary sm:text-2xl">R$</span>
-          <input
-            className="w-full bg-transparent text-center font-headline text-4xl font-extrabold text-on-surface focus:outline-none placeholder-on-surface-variant/30 sm:text-5xl"
-            placeholder="0,00"
-            type="number"
-            step="0.01"
-            min="0.01"
-            max={MAX_TRANSACTION_AMOUNT}
-            required
-            value={amount}
-            onKeyDown={(event) => {
-              if (["-", "+", "e", "E"].includes(event.key)) {
-                event.preventDefault();
-              }
-            }}
-            onChange={(e) => handleAmountChange(e.target.value)}
-          />
-        </div>
-        {amountError ? (
-          <p className="mt-2 text-center text-xs font-medium text-error">
-            {amountError}
-          </p>
-        ) : null}
-        <div className="mx-auto mt-1 h-0.5 w-24 rounded-full bg-primary/20 sm:mt-2 sm:w-32" />
-      </div>
-
-      <div className="flex rounded-xl bg-surface-container-high p-1 sm:p-1.5">
-        <button
-          className={
-            kind === "income"
-              ? "flex-1 rounded-lg bg-secondary-container px-4 py-2 text-sm font-semibold text-on-secondary-container shadow-sm sm:py-3"
-              : "flex-1 rounded-lg px-4 py-2 text-sm font-medium text-on-surface-variant transition hover:bg-surface-container-highest sm:py-3"
-          }
-          onClick={() => setKind("income")}
-          type="button"
-        >
-          Recebidos
-        </button>
-        <button
-          className={
-            kind === "expense"
-              ? "flex-1 rounded-lg bg-error-container/25 px-4 py-2 text-sm font-semibold text-error shadow-sm sm:py-3"
-              : "flex-1 rounded-lg px-4 py-2 text-sm font-medium text-on-surface-variant transition hover:bg-surface-container-highest sm:py-3"
-          }
-          onClick={() => setKind("expense")}
-          type="button"
-        >
-          Gastos
-        </button>
-      </div>
-
-      <div className="space-y-4 sm:space-y-8">
-        <div className="space-y-1.5 sm:space-y-2">
-          <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-            Descrição
-          </label>
-          <div className="rounded-xl bg-surface-container-low p-3 transition focus-within:bg-surface-container-highest sm:p-4">
-            <Input
-              className="min-h-0 bg-transparent p-0 focus:bg-transparent focus:ring-0"
-              placeholder= {kind === "income" ? "Ex: Venda de produto X" : "Ex: Compra de material Y"}
-              required
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-              Data
+      <div className="space-y-5 lg:grid lg:grid-cols-[1fr_1.2fr] lg:gap-6 lg:space-y-0">
+        <section className="space-y-4 rounded-2xl bg-surface-container-low p-4 sm:p-5">
+          <div className="text-center">
+            <label className="mb-1 block text-xs font-medium text-on-surface-variant sm:mb-2 sm:text-sm">
+              {kind === "income" ? "Quanto entrou?" : "Quanto saiu?"}
             </label>
-            <div className="relative">
-              <button
-                className="flex min-h-11 w-full items-center gap-2 rounded-xl bg-surface-container-low p-3 text-left transition hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/15 sm:min-h-14 sm:p-4"
-                onClick={() => {
-                  dateInputRef.current?.focus();
-                  (
-                    dateInputRef.current as HTMLInputElement & {
-                      showPicker?: () => void;
-                    } | null
-                  )?.showPicker?.();
+            <div className="flex items-baseline justify-center gap-1">
+              <span className="font-headline text-xl font-bold text-primary sm:text-2xl">R$</span>
+              <input
+                className="w-full bg-transparent text-center font-headline text-4xl font-extrabold text-on-surface focus:outline-none placeholder-on-surface-variant/30 sm:text-5xl"
+                placeholder="0,00"
+                type="text"
+                inputMode="numeric"
+                required
+                value={formatAmountDigits(amount)}
+                onKeyDown={(event) => {
+                  if (event.ctrlKey || event.metaKey) {
+                    return;
+                  }
+
+                  const isControlKey = [
+                    "Backspace",
+                    "Delete",
+                    "ArrowLeft",
+                    "ArrowRight",
+                    "Tab",
+                    "Home",
+                    "End",
+                  ].includes(event.key);
+
+                  if (isControlKey) {
+                    return;
+                  }
+
+                  if (!/^\d$/.test(event.key)) {
+                    event.preventDefault();
+                    return;
+                  }
                 }}
+                onChange={(e) => handleAmountChange(e.target.value)}
+              />
+            </div>
+            {amountError ? (
+              <p className="mt-2 text-center text-xs font-medium text-error">
+                {amountError}
+              </p>
+            ) : null}
+            <div className="mx-auto mt-1 h-0.5 w-24 rounded-full bg-primary/20 sm:mt-2 sm:w-32 lg:w-40" />
+          </div>
+
+          <div className="flex rounded-xl bg-surface-container-high p-1">
+            <button
+              className={
+                kind === "income"
+                  ? "flex-1 rounded-lg bg-secondary-container px-4 py-2 text-sm font-semibold text-on-secondary-container shadow-sm sm:py-3"
+                  : "flex-1 rounded-lg px-4 py-2 text-sm font-medium text-on-surface-variant transition hover:bg-surface-container-highest sm:py-3"
+              }
+              onClick={() => setKind("income")}
+              type="button"
+            >
+              Recebidos
+            </button>
+            <button
+              className={
+                kind === "expense"
+                  ? "flex-1 rounded-lg bg-error-container/25 px-4 py-2 text-sm font-semibold text-error shadow-sm sm:py-3"
+                  : "flex-1 rounded-lg px-4 py-2 text-sm font-medium text-on-surface-variant transition hover:bg-surface-container-highest sm:py-3"
+              }
+              onClick={() => setKind("expense")}
+              type="button"
+            >
+              Gastos
+            </button>
+          </div>
+
+          <div className="space-y-2 rounded-xl border border-outline-variant/30 bg-surface-container-lowest p-3 sm:space-y-3 sm:p-4">
+            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+              Status do pagamento
+            </label>
+            <div className="flex gap-2 sm:gap-3">
+              <button
+                className={
+                  status === "settled"
+                    ? "flex h-10 flex-1 items-center justify-center rounded-xl bg-primary/10 text-primary ring-2 ring-primary sm:h-12"
+                    : "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-low text-on-surface transition hover:bg-surface-container-high sm:h-12"
+                }
+                onClick={() => setStatus("settled")}
                 type="button"
               >
-                <AppIcon className="h-4 w-4 shrink-0 text-outline" name="calendar" />
-                <span className="flex-1 text-center text-sm font-medium text-on-surface">
-                  {formattedDate}
-                </span>
-                <span aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-semibold">{settledLabel}</span>
               </button>
-              <input
-                ref={dateInputRef}
-                aria-hidden="true"
-                className="pointer-events-none absolute h-px w-px opacity-0"
-                tabIndex={-1}
-                type="date"
+              <button
+                className={
+                  status === "pending"
+                    ? "flex h-10 flex-1 items-center justify-center rounded-xl bg-primary/10 text-primary ring-2 ring-primary sm:h-12"
+                    : "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-low text-on-surface transition hover:bg-surface-container-high sm:h-12"
+                }
+                onClick={() => setStatus("pending")}
+                type="button"
+              >
+                <span className="text-sm font-semibold">{pendingLabel}</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4 rounded-2xl bg-surface-container-low p-4 sm:p-5">
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+              Descrição
+            </label>
+            <div className="rounded-xl bg-surface-container-lowest p-3 transition focus-within:bg-surface-container-highest sm:p-4">
+              <Input
+                className="min-h-0 bg-transparent p-0 focus:bg-transparent focus:ring-0"
+                placeholder= {kind === "income" ? "Ex: Venda de produto X" : "Ex: Compra de material Y"}
                 required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-              Categoria
-            </label>
-            <div className="space-y-1.5">
-              <button
-                className={
-                  showCategoryError
-                    ? "flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-error-container/10 p-3 text-left ring-2 ring-error/40 sm:min-h-14 sm:p-4"
-                    : "flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-low p-3 text-left transition hover:bg-surface-container-high sm:min-h-14 sm:p-4"
-                }
-                onClick={() => setIsCategoryPickerOpen(true)}
-                type="button"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <AppIcon className="h-4 w-4 shrink-0 text-outline" name="tag" />
-                  <span
-                    className={
-                      selectedCategory
-                        ? "truncate text-sm font-medium text-on-surface"
-                        : "truncate text-sm text-on-surface-variant"
-                    }
-                  >
-                    {selectedCategory?.name ?? "Selecione..."}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+                Data
+              </label>
+              <div className="relative">
+                <button
+                  className="flex min-h-11 w-full items-center gap-2 rounded-xl bg-surface-container-lowest p-3 text-left transition hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/15 sm:min-h-14 sm:p-4"
+                  onClick={() => {
+                    dateInputRef.current?.focus();
+                    (
+                      dateInputRef.current as HTMLInputElement & {
+                        showPicker?: () => void;
+                      } | null
+                    )?.showPicker?.();
+                  }}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4 shrink-0 text-outline" name="calendar" />
+                  <span className="flex-1 text-center text-sm font-medium text-on-surface">
+                    {formattedDate}
                   </span>
-                </span>
-                <AppIcon className="h-4 w-4 shrink-0 text-outline" name="arrow-down" />
-              </button>
+                  <span aria-hidden="true" className="h-4 w-4 shrink-0" />
+                </button>
+                <input
+                  ref={dateInputRef}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute h-px w-px opacity-0"
+                  tabIndex={-1}
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+            </div>
 
-              {showCategoryError ? (
-                <p className="px-1 text-xs font-medium text-error">
-                  Selecione uma categoria.
+            <div className="space-y-1.5 sm:space-y-2">
+              <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+                Categoria
+              </label>
+              <div className="space-y-1.5">
+                <button
+                  className={
+                    showCategoryError
+                      ? "flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-error-container/10 p-3 text-left ring-2 ring-error/40 sm:min-h-14 sm:p-4"
+                      : "flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-surface-container-lowest p-3 text-left transition hover:bg-surface-container-high sm:min-h-14 sm:p-4"
+                  }
+                  onClick={() => setIsCategoryPickerOpen(true)}
+                  type="button"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <AppIcon className="h-4 w-4 shrink-0 text-outline" name="tag" />
+                    <span
+                      className={
+                        selectedCategory
+                          ? "truncate text-sm font-medium text-on-surface"
+                          : "truncate text-sm text-on-surface-variant"
+                      }
+                    >
+                      {selectedCategory?.name ?? "Selecione..."}
+                    </span>
+                  </span>
+                  <AppIcon className="h-4 w-4 shrink-0 text-outline" name="arrow-down" />
+                </button>
+
+                {showCategoryError ? (
+                  <p className="px-1 text-xs font-medium text-error">
+                    Selecione uma categoria.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          {status === "pending" && (
+            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 sm:space-y-2">
+              <label className="block px-1 text-xs font-medium sm:text-sm">
+                Data de Vencimento
+              </label>
+              <div className="relative">
+                <button
+                  aria-describedby={dueDateError ? "transaction-due-date-error" : undefined}
+                  aria-invalid={Boolean(dueDateError)}
+                  className={
+                    dueDateError
+                      ? "flex min-h-11 w-full items-center gap-2 rounded-xl border border-error bg-error-container/10 p-3 text-left ring-2 ring-error/30 transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/30 sm:min-h-14 sm:p-4"
+                      : "flex min-h-11 w-full items-center gap-2 rounded-xl border border-error/60 bg-surface-container-lowest p-3 text-left transition hover:bg-error-container/10 focus:outline-none focus:ring-2 focus:ring-error/20 sm:min-h-14 sm:p-4"
+                  }
+                  onClick={() => {
+                    dueDateInputRef.current?.focus();
+                    (
+                      dueDateInputRef.current as HTMLInputElement & {
+                        showPicker?: () => void;
+                      } | null
+                    )?.showPicker?.();
+                  }}
+                  type="button"
+                >
+                  <AppIcon className="h-4 w-4 shrink-0 text-error" name="calendar" />
+                  <span className="flex-1 text-center text-sm font-medium text-error">
+                    {dueDate ? formattedDueDate : "Selecionar"}
+                  </span>
+                  <span aria-hidden="true" className="h-4 w-4 shrink-0" />
+                </button>
+                <input
+                  ref={dueDateInputRef}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute h-px w-px opacity-0"
+                  tabIndex={-1}
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              {dueDateError ? (
+                <p
+                  className="px-1 text-xs font-medium text-error"
+                  id="transaction-due-date-error"
+                >
+                  {dueDateError}
                 </p>
               ) : null}
             </div>
-          </div>
-        </div>
-
-        
-        <div className="space-y-2 rounded-2xl border border-surface-container-high p-3 sm:space-y-3 sm:p-4">
-          <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-            Status do pagamento
-          </label>
-          <div className="flex gap-2 sm:gap-3">
-            <button
-              className={
-                status === "settled"
-                  ? "flex h-10 flex-1 items-center justify-center rounded-xl bg-primary/10 text-primary ring-2 ring-primary sm:h-12"
-                  : "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-low text-on-surface transition hover:bg-surface-container-high sm:h-12"
-              }
-              onClick={() => setStatus("settled")}
-              type="button"
-            >
-              <span className="text-sm font-semibold">{settledLabel}</span>
-            </button>
-            <button
-              className={
-                status === "pending"
-                  ? "flex h-10 flex-1 items-center justify-center rounded-xl bg-primary/10 text-primary ring-2 ring-primary sm:h-12"
-                  : "flex h-10 flex-1 items-center justify-center rounded-xl bg-surface-container-low text-on-surface transition hover:bg-surface-container-high sm:h-12"
-              }
-              onClick={() => setStatus("pending")}
-              type="button"
-            >
-              <span className="text-sm font-semibold">{pendingLabel}</span>
-            </button> 
-          </div>
-
-          
-          {status === "pending" && (
-             <div className="mt-3 space-y-1.5 animate-in fade-in slide-in-from-top-2 sm:mt-4 sm:space-y-2">
-               <label className="block px-1 text-xs font-medium sm:text-sm">
-                 Data de Vencimento
-               </label>
-               <div className="relative">
-                 <button
-                   className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-error/60 bg-error-container/5 p-3 text-left transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/20 sm:min-h-14 sm:p-4"
-                   onClick={() => {
-                     dueDateInputRef.current?.focus();
-                     (
-                       dueDateInputRef.current as HTMLInputElement & {
-                         showPicker?: () => void;
-                       } | null
-                     )?.showPicker?.();
-                   }}
-                   type="button"
-                 >
-                   <AppIcon className="h-4 w-4 shrink-0 text-error" name="calendar" />
-                   <span className="flex-1 text-center text-sm font-medium text-error">
-                     {dueDate ? formattedDueDate : "Selecionar"}
-                   </span>
-                   <span aria-hidden="true" className="h-4 w-4 shrink-0" />
-                 </button>
-                 <input
-                   ref={dueDateInputRef}
-                   aria-hidden="true"
-                   className="pointer-events-none absolute h-px w-px opacity-0"
-                   tabIndex={-1}
-                   type="date"
-                   required={status === "pending"}
-                   value={dueDate}
-                   onChange={(e) => setDueDate(e.target.value)}
-                 />
-               </div>
-             </div>
           )}
-        </div>
 
-        <div className="pt-3 sm:pt-6">
-          <Button type="submit" className="min-h-12 gap-2 font-headline text-base font-bold sm:min-h-14 sm:text-lg" fullWidth disabled={isLoading}>
-            {isLoading ? "Salvando..." : (
-              <>
-                <AppIcon name="receipt" />
-                Salvar movimentação
-              </>
-            )}
-          </Button>
-        </div>
+          <div className="pt-2 sm:pt-4">
+            <Button type="submit" className="min-h-12 gap-2 font-headline text-base font-bold sm:min-h-14 sm:text-lg" fullWidth disabled={isLoading}>
+              {isLoading ? "Salvando..." : (
+                <>
+                  <AppIcon name="receipt" />
+                  Salvar movimentação
+                </>
+              )}
+            </Button>
+          </div>
+        </section>
       </div>
 
       {isCategoryPickerOpen ? (

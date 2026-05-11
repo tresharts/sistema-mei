@@ -16,7 +16,9 @@ class AlertaServiceTest {
     void naoDeveCriarAlertaDeContaAtrasadaQuandoQuantidadeForZero() {
         List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 10),
-            0
+            0,
+            true,
+            20
         );
 
         assertTrue(alertas.isEmpty());
@@ -26,12 +28,14 @@ class AlertaServiceTest {
     void deveCriarAlertaDeContaAtrasadaQuandoQuantidadeForMaiorQueZero() {
         List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 10),
-            2
+            2,
+            true,
+            20
         );
 
         assertEquals(1, alertas.size());
         assertEquals(TipoAlerta.CONTAS_A_RECEBER_ATRASADAS.name(), alertas.getFirst().tipo());
-        assertEquals("Voce tem 2 contas atrasadas", alertas.getFirst().titulo());
+        assertEquals("Você tem 2 contas atrasadas", alertas.getFirst().titulo());
         assertEquals(2L, alertas.getFirst().quantidade());
         assertEquals(SeveridadeAlerta.DANGER.name(), alertas.getFirst().severidade());
     }
@@ -40,7 +44,9 @@ class AlertaServiceTest {
     void deveCriarAlertaDeDasTresDiasAntesDoVencimento() {
         List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 17),
-            0
+            0,
+            true,
+            20
         );
 
         assertEquals(1, alertas.size());
@@ -54,7 +60,9 @@ class AlertaServiceTest {
     void deveCriarAlertaDeDasNoDiaDoVencimento() {
         List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 20),
-            0
+            0,
+            true,
+            20
         );
 
         assertEquals(1, alertas.size());
@@ -67,7 +75,9 @@ class AlertaServiceTest {
     void naoDeveCriarAlertaDeDasAntesDaJanelaDeTresDias() {
         List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 16),
-            0
+            0,
+            true,
+            20
         );
 
         assertTrue(alertas.isEmpty());
@@ -77,9 +87,37 @@ class AlertaServiceTest {
     void deveConsiderarVencimentoDoMesSeguinteQuandoDiaVinteJaPassou() {
         List<AlertaResponse> alertas = service.listarAlertasAtivos(
             LocalDate.of(2026, 4, 21),
-            0
+            0,
+            true,
+            20
         );
 
         assertTrue(alertas.isEmpty());
+    }
+
+    @Test
+    void naoDeveCriarAlertaDeDasQuandoLembreteEstiverDesativado() {
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
+            LocalDate.of(2026, 4, 20),
+            0,
+            false,
+            20
+        );
+
+        assertTrue(alertas.isEmpty());
+    }
+
+    @Test
+    void deveCriarAlertaDeDasComDiaConfiguradoPeloUsuario() {
+        List<AlertaResponse> alertas = service.listarAlertasAtivos(
+            LocalDate.of(2026, 4, 25),
+            0,
+            true,
+            28
+        );
+
+        assertEquals(1, alertas.size());
+        assertEquals("DAS vence em 3 dias", alertas.getFirst().titulo());
+        assertEquals(LocalDate.of(2026, 4, 28), alertas.getFirst().dataReferencia());
     }
 }

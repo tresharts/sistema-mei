@@ -1,12 +1,26 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { APP_NAVIGATION, ROUTE_PATHS } from "../../lib/constants";
 import { cn } from "../../lib/cn";
+import {
+  USER_SETTINGS_UPDATED_EVENT,
+  type UserSettingsUpdatedEvent,
+} from "../../lib/settingsEvents";
+import { settingsService } from "../../services/settingsService";
 import AppIcon from "../ui/AppIcon";
+import BrandLogo from "../ui/BrandLogo";
 import BottomNav from "./BottomNav";
 import TopAppBar from "./TopAppBar";
 
+const DEFAULT_BUSINESS_NAME = "Meu negócio MEI";
+
+function toBusinessName(nomeNegocio?: string | null) {
+  return nomeNegocio?.trim() || DEFAULT_BUSINESS_NAME;
+}
+
 function AppShell() {
   const { pathname } = useLocation();
+  const [businessName, setBusinessName] = useState(DEFAULT_BUSINESS_NAME);
 
   const isDashboard = pathname === ROUTE_PATHS.dashboard;
   const isHistory = pathname === ROUTE_PATHS.history;
@@ -19,13 +33,44 @@ function AppShell() {
       ? "Ajustes"
       : isNewTransaction
         ? "Nova Movimentação"
-        : "Artesa Financeira";
+        : businessName;
 
   const headerVariant: "brand" | "page" | "modal" = isDashboard
     ? "brand"
     : isNewTransaction
       ? "modal"
       : "page";
+
+  useEffect(() => {
+    let shouldUpdate = true;
+
+    async function loadBusinessName() {
+      try {
+        const settings = await settingsService.getSettings();
+
+        if (shouldUpdate) {
+          setBusinessName(toBusinessName(settings.nomeNegocio));
+        }
+      } catch {
+        if (shouldUpdate) {
+          setBusinessName(DEFAULT_BUSINESS_NAME);
+        }
+      }
+    }
+
+    function handleSettingsUpdated(event: Event) {
+      const settingsEvent = event as UserSettingsUpdatedEvent;
+      setBusinessName(toBusinessName(settingsEvent.detail.nomeNegocio));
+    }
+
+    loadBusinessName();
+    window.addEventListener(USER_SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
+
+    return () => {
+      shouldUpdate = false;
+      window.removeEventListener(USER_SETTINGS_UPDATED_EVENT, handleSettingsUpdated);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,7 +86,7 @@ function AppShell() {
           className={cn(
             "relative z-10 mx-auto w-full px-6",
             isNewTransaction
-              ? "pb-4 pt-20 lg:max-w-2xl lg:px-8 lg:pb-8 lg:pt-24"
+              ? "pb-4 pt-20 lg:max-w-[72rem] lg:px-8 lg:pb-8 lg:pt-24"
               : "pb-32 pt-24 lg:px-8 lg:pb-8",
             !isNewTransaction && "lg:max-w-[64rem]",
           )}
@@ -71,14 +116,11 @@ function DesktopSidebar() {
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-56 border-r border-outline-variant/30 bg-surface-container-lowest px-3 py-6 lg:block">
       <div className="flex h-full flex-col">
         <Link className="flex items-center gap-3 rounded-2xl px-2 py-1" to={ROUTE_PATHS.dashboard}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary">
-            <AppIcon name="wallet" />
-          </div>
+          <BrandLogo />
           <div className="min-w-0">
             <p className="truncate font-headline text-base font-extrabold text-primary">
-              Artesa Financeira
+              BoraMEI
             </p>
-            <p className="text-xs text-on-surface-variant">Sistema MEI</p>
           </div>
         </Link>
 

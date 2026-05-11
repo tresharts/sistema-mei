@@ -7,13 +7,16 @@ import { ROUTE_PATHS } from "../lib/constants";
 
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
-import AppIcon from "../components/ui/AppIcon";
+import BrandLogo from "../components/ui/BrandLogo";
 import { toast } from "sonner";
 
 const registerSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("E-mail inválido"),
-  senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+  senha: z
+    .string()
+    .min(6, "A senha deve ter no mínimo 6 caracteres")
+    .max(72, "A senha deve ter no máximo 72 caracteres"),
   confirmarSenha: z.string()
 }).refine((data) => data.senha === data.confirmarSenha, {
   message: "As senhas não coincidem",
@@ -66,15 +69,13 @@ function CadastroPage() {
       <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col justify-center">
         
         <header className="mb-8 space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-on-primary shadow-lg shadow-primary/20">
-            <AppIcon name="sparkles" className="h-8 w-8" />
-          </div>
+          <BrandLogo className="mx-auto h-20 w-20 rounded-2xl shadow-lg shadow-primary/10" />
           <div className="space-y-1">
             <h1 className="font-headline text-3xl font-extrabold tracking-tight text-on-surface">
               Criar sua conta
             </h1>
             <p className="text-sm text-on-surface-variant">
-              Junte-se ao Sistema MEI e organize sua Empresa.
+              Junte-se ao BoraMEI e organize sua Empresa.
             </p>
           </div>
         </header>

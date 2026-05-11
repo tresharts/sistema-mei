@@ -154,6 +154,17 @@ class AuthControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void deveRetornar400QuandoSenhaDeCadastroForCurta() throws Exception {
+        RegisterRequest request = new RegisterRequest("Maria", "maria@teste.com", "12345");
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.erros[0]").value("senha: A senha deve ter entre 6 e 72 caracteres"));
+    }
+
+    @Test
     void deveRetornar422QuandoRefreshRecebeTokenInvalidoNoBody() throws Exception {
         String body = """
             {

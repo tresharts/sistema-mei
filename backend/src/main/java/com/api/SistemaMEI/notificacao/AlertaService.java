@@ -16,7 +16,7 @@ import java.util.Optional;
 @Service
 public class AlertaService {
 
-    private static final int DIA_VENCIMENTO_DAS = 20;
+    private static final int DIA_VENCIMENTO_DAS_PADRAO = 20;
     private static final int DIAS_ANTES_ALERTA_DAS = 3;
 
     /**
@@ -28,15 +28,19 @@ public class AlertaService {
      */
     public List<AlertaResponse> listarAlertasAtivos(
         LocalDate hoje,
-        long quantidadeContasAReceberAtrasadas
+        long quantidadeContasAReceberAtrasadas,
+        boolean lembreteDasAtivo,
+        Integer diaLembreteDas
     ) {
         List<AlertaResponse> alertas = new ArrayList<>();
 
         criarAlertaContasAReceberAtrasadas(quantidadeContasAReceberAtrasadas)
             .ifPresent(alertas::add);
 
-        criarAlertaDas(hoje)
-            .ifPresent(alertas::add);
+        if (lembreteDasAtivo) {
+            criarAlertaDas(hoje, diaLembreteDas)
+                .ifPresent(alertas::add);
+        }
 
         return alertas;
     }
@@ -51,8 +55,8 @@ public class AlertaService {
         }
 
         String titulo = quantidade == 1
-            ? "Voce tem 1 conta atrasada"
-            : "Voce tem " + quantidade + " contas atrasadas";
+            ? "Você tem 1 conta atrasada"
+            : "Você tem " + quantidade + " contas atrasadas";
 
         String mensagem = quantidade == 1
             ? "Confira o valor que ainda nao foi recebido."
@@ -74,8 +78,8 @@ public class AlertaService {
      * A regra do MVP e mostrar o alerta somente quando estiver perto:
      * dia 17, 18, 19 ou no proprio dia 20.
      */
-    private Optional<AlertaResponse> criarAlertaDas(LocalDate hoje) {
-        LocalDate vencimento = calcularProximoVencimentoDas(hoje);
+    private Optional<AlertaResponse> criarAlertaDas(LocalDate hoje, Integer diaLembreteDas) {
+        LocalDate vencimento = calcularProximoVencimentoDas(hoje, diaLembreteDas);
         long diasRestantes = ChronoUnit.DAYS.between(hoje, vencimento);
 
         if (diasRestantes > DIAS_ANTES_ALERTA_DAS) {
@@ -84,14 +88,14 @@ public class AlertaService {
 
         String titulo = switch ((int) diasRestantes) {
             case 0 -> "DAS vence hoje";
-            case 1 -> "DAS vence amanha";
+            case 1 -> "DAS vence amanhã";
             default -> "DAS vence em " + diasRestantes + " dias";
         };
 
         return Optional.of(new AlertaResponse(
             TipoAlerta.DAS_PROXIMO_VENCIMENTO.name(),
             titulo,
-            "Nao esqueca de pagar o DAS mensal.",
+            "Não esqueça de pagar o DAS mensal.",
             diasRestantes,
             SeveridadeAlerta.WARNING.name(),
             vencimento
@@ -104,8 +108,12 @@ public class AlertaService {
      * Ate o dia 20, o vencimento e o dia 20 do mes atual.
      * Depois do dia 20, passamos a olhar para o dia 20 do mes seguinte.
      */
-    private LocalDate calcularProximoVencimentoDas(LocalDate hoje) {
-        LocalDate vencimentoMesAtual = hoje.withDayOfMonth(DIA_VENCIMENTO_DAS);
+    private LocalDate calcularProximoVencimentoDas(LocalDate hoje, Integer diaLembreteDas) {
+        int diaVencimento = diaLembreteDas == null
+            ? DIA_VENCIMENTO_DAS_PADRAO
+            : Math.min(Math.max(diaLembreteDas, 1), 28);
+
+        LocalDate vencimentoMesAtual = hoje.withDayOfMonth(diaVencimento);
 
         if (hoje.isAfter(vencimentoMesAtual)) {
             return vencimentoMesAtual.plusMonths(1);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,13 +7,19 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import AppIcon from "../components/ui/AppIcon";
 import Modal from "../components/ui/Modal";
-import { notificationPreferences } from "../data/mockData";
 import { ROUTE_PATHS } from "../lib/constants";
 import { api } from "../lib/api";
+import { clearAccessToken } from "../lib/session";
+import { USER_SETTINGS_UPDATED_EVENT } from "../lib/settingsEvents";
 import {
   categoriesService,
   type CategoryFormPayload,
 } from "../services/categoriesService";
+import {
+  settingsService,
+  type UserSettings,
+  type UserSettingsPayload,
+} from "../services/settingsService";
 import type {
   ApiTransactionKind,
   ApiTransactionScope,
@@ -29,6 +35,26 @@ type ApiErrorResponse = {
 type CategoryModalState =
   | { mode: "create"; category?: undefined }
   | { mode: "edit"; category: TransactionCategory };
+
+type NotificationSettingKey = "lembreteDasAtivo";
+
+type SettingsFormState = {
+  nomeNegocio: string;
+  atividade: string;
+  valorDas: string;
+  lembreteDasAtivo: boolean;
+  diaLembreteDas: string;
+  resumoDiarioAtivo: boolean;
+};
+
+const defaultSettingsForm: SettingsFormState = {
+  nomeNegocio: "",
+  atividade: "",
+  valorDas: "72.00",
+  lembreteDasAtivo: true,
+  diaLembreteDas: "20",
+  resumoDiarioAtivo: false,
+};
 
 function getErrorMessage(error: unknown) {
   if (error instanceof AxiosError) {
@@ -47,18 +73,155 @@ function getCategoryScopeLabel(classificacao: ApiTransactionScope) {
   return classificacao === "EMPRESARIAL" ? "Empresarial" : "Pessoal";
 }
 
+function toDecimalInput(value: number) {
+  return Number(value).toFixed(2);
+}
+
+function toNullableText(value: string) {
+  const trimmedValue = value.trim();
+  return trimmedValue ? trimmedValue : null;
+}
+
+function parseDasValue(value: string) {
+  const parsedValue = Number(value.replace(",", "."));
+
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+    throw new Error("Informe um valor de DAS maior que zero.");
+  }
+
+  if (parsedValue > 1000000) {
+    throw new Error("O valor do DAS deve ser menor ou igual a R$ 1.000.000,00.");
+  }
+
+  return Number(parsedValue.toFixed(2));
+}
+
+function parseDiaLembreteDas(value: string) {
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 28) {
+    throw new Error("Informe um dia de lembrete do DAS entre 1 e 28.");
+  }
+
+  return parsedValue;
+}
+
+function sortCategoriesByName(a: TransactionCategory, b: TransactionCategory) {
+  return a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
+}
+
+function toSettingsForm(settings: UserSettings): SettingsFormState {
+  return {
+    nomeNegocio: settings.nomeNegocio ?? "",
+    atividade: settings.atividade ?? "",
+    valorDas: toDecimalInput(settings.valorDas),
+    lembreteDasAtivo: settings.lembreteDasAtivo,
+    diaLembreteDas: String(settings.diaLembreteDas),
+    resumoDiarioAtivo: settings.resumoDiarioAtivo,
+  };
+}
+
+function toSettingsPayload(form: SettingsFormState): UserSettingsPayload {
+  return {
+    valorDas: parseDasValue(form.valorDas),
+    nomeNegocio: toNullableText(form.nomeNegocio),
+    atividade: toNullableText(form.atividade),
+    lembreteDasAtivo: form.lembreteDasAtivo,
+    diaLembreteDas: parseDiaLembreteDas(form.diaLembreteDas),
+    resumoDiarioAtivo: form.resumoDiarioAtivo,
+  };
+}
+
+function getInitials(name: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "ME";
+}
+
 function SettingsPage() {
-  const [notifications, setNotifications] = useState(notificationPreferences);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [settingsForm, setSettingsForm] =
+    useState<SettingsFormState>(defaultSettingsForm);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [categoryModal, setCategoryModal] = useState<CategoryModalState | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<TransactionCategory | null>(null);
+  const businessNameInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const customCategoriesCount = useMemo(
     () => categories.filter((category) => !category.isDefault).length,
     [categories],
   );
+  const customCategories = useMemo(
+    () => categories.filter((category) => !category.isDefault),
+    [categories],
+  );
+  const customIncomeCategories = useMemo(
+    () =>
+      customCategories
+        .filter((category) => category.tipo === "RECEITA")
+        .sort(sortCategoriesByName),
+    [customCategories],
+  );
+  const customExpenseCategories = useMemo(
+    () =>
+      customCategories
+        .filter((category) => category.tipo === "DESPESA")
+        .sort(sortCategoriesByName),
+    [customCategories],
+  );
+
+  const notificationItems = useMemo<
+    Array<{
+      id: NotificationSettingKey;
+      title: string;
+      schedule: string;
+      enabled: boolean;
+    }>
+  >(
+    () => [
+      {
+        id: "lembreteDasAtivo",
+        title: "Lembrete do DAS",
+        schedule: `Aviso todo dia ${settingsForm.diaLembreteDas} de cada mês`,
+        enabled: settingsForm.lembreteDasAtivo,
+      },
+    ],
+    [settingsForm.diaLembreteDas, settingsForm.lembreteDasAtivo],
+  );
+
+  const userName = settings?.nomeUsuario ?? "Usuário MEI";
+  const businessName = settingsForm.nomeNegocio.trim() || "Meu negócio MEI";
+  const activityName =
+    settingsForm.atividade.trim() || "Microempreendedor individual";
+  const userInitials = getInitials(settingsForm.nomeNegocio || userName);
+
+  function applyLoadedSettings(loadedSettings: UserSettings) {
+    setSettings(loadedSettings);
+    setSettingsForm(toSettingsForm(loadedSettings));
+  }
+
+  async function loadSettings() {
+    try {
+      setIsLoadingSettings(true);
+      const loadedSettings = await settingsService.getSettings();
+      applyLoadedSettings(loadedSettings);
+    } catch (error) {
+      toast.error("Erro ao carregar configurações.", {
+        description: getErrorMessage(error) ?? "Tente novamente em alguns instantes.",
+      });
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  }
 
   async function loadCategories() {
     try {
@@ -76,21 +239,75 @@ function SettingsPage() {
   }
 
   useEffect(() => {
+    loadSettings();
     loadCategories();
   }, []);
+
+  const handleSettingsFieldChange = <K extends keyof SettingsFormState>(
+    field: K,
+    value: SettingsFormState[K],
+  ) => {
+    setSettingsForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSaveSettings = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+
+    let payload: UserSettingsPayload;
+    try {
+      payload = toSettingsPayload(settingsForm);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Verifique os dados das configurações.",
+      );
+      return;
+    }
+
+    try {
+      setIsSavingSettings(true);
+      const updatedSettings = await settingsService.updateSettings(payload);
+      applyLoadedSettings(updatedSettings);
+      window.dispatchEvent(
+        new CustomEvent(USER_SETTINGS_UPDATED_EVENT, { detail: updatedSettings }),
+      );
+      toast.success("Configurações salvas.");
+    } catch (error) {
+      toast.error("Erro ao salvar configurações.", {
+        description: getErrorMessage(error) ?? "Verifique os dados e tente novamente.",
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleToggleNotification = (field: NotificationSettingKey) => {
+    setSettingsForm((current) => ({ ...current, [field]: !current[field] }));
+  };
 
   const handleSaveCategory = async (payload: CategoryFormPayload) => {
     try {
       if (categoryModal?.mode === "edit") {
-        await categoriesService.updateCategory(categoryModal.category.id, payload);
+        const updatedCategory = await categoriesService.updateCategory(
+          categoryModal.category.id,
+          payload,
+        );
+        setCategories((current) =>
+          current.map((category) =>
+            category.id === updatedCategory.id ? updatedCategory : category,
+          ),
+        );
         toast.success("Categoria atualizada.");
       } else {
-        await categoriesService.createCategory(payload);
+        const createdCategory = await categoriesService.createCategory(payload);
+        setCategories((current) =>
+          [...current, createdCategory].sort(sortCategoriesByName),
+        );
         toast.success("Categoria criada.");
       }
 
       setCategoryModal(null);
-      await loadCategories();
     } catch (error) {
       toast.error("Erro ao salvar categoria.", {
         description: getErrorMessage(error) ?? "Verifique os dados e tente novamente.",
@@ -103,16 +320,20 @@ function SettingsPage() {
       return;
     }
 
+    const categoryId = categoryToDelete.id;
+
     try {
-      await categoriesService.deleteCategory(categoryToDelete.id);
+      await categoriesService.deleteCategory(categoryId);
+      setCategories((current) =>
+        current.filter((category) => category.id !== categoryId),
+      );
       toast.success("Categoria excluída.");
       setCategoryToDelete(null);
-      await loadCategories();
     } catch (error) {
       toast.error("Erro ao excluir categoria.", {
         description:
           getErrorMessage(error) ??
-          "Categorias vinculadas a movimentacoes podem exigir ajustes antes da exclusao.",
+          "Categorias vinculadas a movimentações podem exigir ajustes antes da exclusão.",
       });
     }
   };
@@ -123,8 +344,7 @@ function SettingsPage() {
     } catch (error) {
       console.warn("Não foi possível revogar sessão no backend:", error);
     } finally {
-      localStorage.removeItem("acessToken");
-      localStorage.removeItem("refreshToken");
+      clearAccessToken();
       navigate(ROUTE_PATHS.login, { replace: true });
     }
   };
@@ -135,9 +355,12 @@ function SettingsPage() {
       <section className="space-y-4">
         <div className="flex items-center gap-5 rounded-[1.5rem] rounded-bl-lg bg-surface-container-lowest p-6 shadow-editorial">
           <div className="relative">
-            <Avatar initials="CO" size="lg" />
+            <Avatar initials={userInitials} size="lg" />
             <button
               className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg"
+              aria-label="Editar dados do negócio"
+              disabled={isLoadingSettings}
+              onClick={() => businessNameInputRef.current?.focus()}
               type="button"
             >
               <AppIcon className="h-4 w-4" name="edit" />
@@ -145,20 +368,20 @@ function SettingsPage() {
           </div>
 
           <div className="flex-1">
-            <h2 className="font-headline text-xl font-bold text-on-surface">
-              Atelie Florescer
+            <h2 className="break-words font-headline text-xl font-bold text-on-surface">
+              {isLoadingSettings ? "Carregando..." : businessName}
             </h2>
-            <p className="text-sm font-medium text-on-surface-variant">
-              Clara Oliveira
+            <p className="break-words text-sm font-medium text-on-surface-variant">
+              {userName}
             </p>
-            <span className="mt-2 inline-block rounded-full bg-tertiary-container px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-on-tertiary-container">
-              Artesa individual
+            <span className="mt-2 inline-block max-w-full break-words rounded-full bg-tertiary-container px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-on-tertiary-container">
+              {activityName}
             </span>
           </div>
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl bg-primary/5 p-6">
+      <section className="hidden space-y-4 rounded-2xl bg-primary/5 p-6 lg:block">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
             <AppIcon className="text-primary" name="heart" />
@@ -182,7 +405,7 @@ function SettingsPage() {
         </button>
       </section>
 
-      <div className="space-y-6 pb-8 pt-2">
+      <div className="hidden space-y-6 pb-8 pt-2 lg:block">
         <button
           onClick={handleLogout}
           className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
@@ -192,7 +415,7 @@ function SettingsPage() {
           Sair da conta
         </button>
         <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
-          Sistema MEI v0.1.0
+          BoraMEI v0.1.0
         </p>
       </div>
       </div>
@@ -201,31 +424,73 @@ function SettingsPage() {
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
           <AppIcon className="text-primary" name="document" />
-          <h3 className="font-headline font-bold text-on-surface">Guia DAS</h3>
+          <h3 className="font-headline font-bold text-on-surface">Dados e DAS</h3>
         </div>
 
-        <div className="space-y-4 rounded-2xl bg-surface-container-low p-5">
+        <form
+          className="space-y-4 rounded-2xl bg-surface-container-low p-5"
+          onSubmit={handleSaveSettings}
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              ref={businessNameInputRef}
+              disabled={isLoadingSettings || isSavingSettings}
+              label="Nome do negócio"
+              maxLength={120}
+              placeholder="Ex: Atelie Florescer"
+              value={settingsForm.nomeNegocio}
+              onChange={(event) =>
+                handleSettingsFieldChange("nomeNegocio", event.target.value)
+              }
+            />
+            <Input
+              disabled={isLoadingSettings || isSavingSettings}
+              label="Atividade"
+              maxLength={120}
+              placeholder="Ex: Artesa individual"
+              value={settingsForm.atividade}
+              onChange={(event) =>
+                handleSettingsFieldChange("atividade", event.target.value)
+              }
+            />
+          </div>
+
           <label className="block space-y-2">
             <span className="text-sm font-medium text-on-surface-variant">
-              Valor mensal fixo
+              Valor mensal fixo do DAS
             </span>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant">
                 R$
               </span>
               <input
-                className="h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                defaultValue="72.00"
-                type="number"
-                step="0.01"
+                className="h-14 w-full rounded-xl border-none bg-surface-container-lowest pl-12 pr-4 font-headline text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isLoadingSettings || isSavingSettings}
+                inputMode="decimal"
+                maxLength={13}
+                placeholder="72.00"
+                type="text"
+                value={settingsForm.valorDas}
+                onChange={(event) =>
+                  handleSettingsFieldChange("valorDas", event.target.value)
+                }
               />
             </div>
           </label>
           <p className="px-1 text-[11px] leading-relaxed text-on-surface-variant">
-            Este valor sera usado no futuro para calcular automaticamente os
-            custos fixos obrigatorios do MEI.
+            Este valor sera usado para calcular automaticamente os custos fixos
+            obrigatorios do MEI.
           </p>
-        </div>
+
+          <Button
+            fullWidth
+            disabled={isLoadingSettings}
+            isLoading={isSavingSettings}
+            type="submit"
+          >
+            Salvar configurações
+          </Button>
+        </form>
       </section>
 
       <section className="space-y-3">
@@ -258,20 +523,24 @@ function SettingsPage() {
               />
             ))}
           </div>
-        ) : categories.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {categories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onDelete={() => setCategoryToDelete(category)}
-                onEdit={() => setCategoryModal({ mode: "edit", category })}
-              />
-            ))}
+        ) : customCategoriesCount > 0 ? (
+          <div className="space-y-5">
+            <CategoryListGroup
+              categories={customIncomeCategories}
+              title="Receita"
+              onDelete={(category) => setCategoryToDelete(category)}
+              onEdit={(category) => setCategoryModal({ mode: "edit", category })}
+            />
+            <CategoryListGroup
+              categories={customExpenseCategories}
+              title="Despesa"
+              onDelete={(category) => setCategoryToDelete(category)}
+              onEdit={(category) => setCategoryModal({ mode: "edit", category })}
+            />
           </div>
         ) : (
           <div className="rounded-xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
-            Nenhuma categoria encontrada.
+            Nenhuma categoria personalizada encontrada.
           </div>
         )}
 
@@ -292,7 +561,7 @@ function SettingsPage() {
         </div>
 
         <div className="overflow-hidden rounded-xl bg-surface-container-lowest shadow-editorial">
-          {notifications.map((item, index) => (
+          {notificationItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-center justify-between p-4">
                 <div>
@@ -306,31 +575,102 @@ function SettingsPage() {
                   aria-label={`Alternar ${item.title}`}
                   className={
                     item.enabled
-                      ? "flex h-6 w-12 items-center justify-end rounded-full bg-primary px-1"
-                      : "flex h-6 w-12 items-center justify-start rounded-full bg-outline-variant/30 px-1"
+                      ? "flex h-6 w-12 items-center rounded-full bg-primary px-1 transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60"
+                      : "flex h-6 w-12 items-center rounded-full bg-outline-variant/30 px-1 transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60"
                   }
-                  onClick={() =>
-                    setNotifications((current) =>
-                      current.map((notification) =>
-                        notification.id === item.id
-                          ? { ...notification, enabled: !notification.enabled }
-                          : notification,
-                      ),
-                    )
-                  }
+                  disabled={isLoadingSettings || isSavingSettings}
+                  onClick={() => handleToggleNotification(item.id)}
                   type="button"
                 >
-                  <span className="h-4 w-4 rounded-full bg-white shadow-sm" />
+                  <span
+                    className={
+                      item.enabled
+                        ? "h-4 w-4 translate-x-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
+                        : "h-4 w-4 translate-x-0 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out"
+                    }
+                  />
                 </button>
               </div>
 
-              {index < notifications.length - 1 ? (
+              {index < notificationItems.length - 1 ? (
                 <div className="mx-4 h-px bg-surface-container-low" />
               ) : null}
             </div>
           ))}
         </div>
+
+        <label className="block space-y-2">
+          <span className="px-1 text-sm font-medium text-on-surface-variant">
+            Dia do lembrete do DAS
+          </span>
+          <input
+            className="h-12 w-full rounded-xl border-none bg-surface-container-low px-4 text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isLoadingSettings || isSavingSettings}
+            inputMode="numeric"
+            max={28}
+            min={1}
+            type="number"
+            value={settingsForm.diaLembreteDas}
+            onChange={(event) =>
+              handleSettingsFieldChange(
+                "diaLembreteDas",
+                event.target.value.replace(/\D/g, "").slice(0, 2),
+              )
+            }
+          />
+          <p className="px-1 text-[11px] text-on-surface-variant">
+            Escolha um dia entre 1 e 28.
+          </p>
+        </label>
+
+        <Button
+          fullWidth
+          disabled={isLoadingSettings}
+          isLoading={isSavingSettings}
+          onClick={() => void handleSaveSettings()}
+          type="button"
+        >
+          Salvar preferências
+        </Button>
       </section>
+
+      <section className="space-y-4 rounded-2xl bg-primary/5 p-6 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <AppIcon className="text-primary" name="heart" />
+          </div>
+          <div>
+            <h3 className="font-headline font-bold text-on-surface">
+              Alguma dúvida?
+            </h3>
+            <p className="text-xs text-on-surface-variant">
+              Estamos aqui para cuidar do seu negócio.
+            </p>
+          </div>
+        </div>
+
+        <button
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
+          type="button"
+        >
+          <AppIcon className="h-4 w-4" name="chat" />
+          Conversar com suporte
+        </button>
+      </section>
+
+      <div className="space-y-6 pb-8 pt-2 lg:hidden">
+        <button
+          onClick={handleLogout}
+          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
+          type="button"
+        >
+          <AppIcon name="logout" />
+          Sair da conta
+        </button>
+        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
+          BoraMEI v0.1.0
+        </p>
+      </div>
 
       </div>
 
@@ -414,6 +754,46 @@ function CategoryCard({
         {getCategoryGroupLabel(category.tipo)} • {getCategoryScopeLabel(category.classificacao)}
       </p>
     </article>
+  );
+}
+
+function CategoryListGroup({
+  categories,
+  title,
+  onDelete,
+  onEdit,
+}: {
+  categories: TransactionCategory[];
+  title: "Receita" | "Despesa";
+  onDelete: (category: TransactionCategory) => void;
+  onEdit: (category: TransactionCategory) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between px-1">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">
+          {title}
+        </h4>
+        <span className="text-xs text-on-surface-variant">{categories.length}</span>
+      </div>
+
+      {categories.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {categories.map((category) => (
+            <CategoryCard
+              key={category.id}
+              category={category}
+              onDelete={() => onDelete(category)}
+              onEdit={() => onEdit(category)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl bg-surface-container-low p-4 text-xs text-on-surface-variant">
+          Nenhuma categoria personalizada de {title.toLowerCase()}.
+        </div>
+      )}
+    </div>
   );
 }
 

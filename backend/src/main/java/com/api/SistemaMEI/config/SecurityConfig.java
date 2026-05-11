@@ -2,6 +2,7 @@ package com.api.SistemaMEI.config;
 
 import com.api.SistemaMEI.auth.AuthResponse;
 import com.api.SistemaMEI.auth.AuthCookieService;
+import com.api.SistemaMEI.auth.AuthRateLimitFilter;
 import com.api.SistemaMEI.auth.AuthService;
 import com.api.SistemaMEI.auth.SecurityFilter;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final SecurityFilter securityFilter;
+    private final AuthRateLimitFilter authRateLimitFilter;
     private final AuthService authService;
     private final AuthCookieService authCookieService;
 
@@ -57,6 +59,7 @@ public class SecurityConfig {
             })
             .oauth2Login(oauth2 -> oauth2
                 .successHandler(googleOAuthSuccessHandler()))
+            .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }

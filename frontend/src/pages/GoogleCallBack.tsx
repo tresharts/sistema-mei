@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { refreshSession } from "../lib/api";
 import { ROUTE_PATHS } from "../lib/constants";
+import { clearAccessToken } from "../lib/session";
 
 function GoogleCallbackPage() {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ function GoogleCallbackPage() {
     let mounted = true;
 
     const finishGoogleLogin = async () => {
-      localStorage.removeItem("acessToken");
+      clearAccessToken();
       const token = await refreshSession();
       if (!mounted) {
         return;

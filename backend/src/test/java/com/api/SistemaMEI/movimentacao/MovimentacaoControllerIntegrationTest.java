@@ -86,6 +86,7 @@ class MovimentacaoControllerIntegrationTest extends IntegrationTestBase {
             .andExpect(jsonPath("$.descricao").value("Venda no cartao"))
             .andExpect(jsonPath("$.tipo").value("RECEITA"))
             .andExpect(jsonPath("$.status").value("RECEBIDO"))
+            .andExpect(jsonPath("$.dataVencimento").isEmpty())
             .andExpect(jsonPath("$.categoriaId").value(categoria.getId().toString()))
             .andExpect(jsonPath("$.categoriaNome").value("Vendas"));
     }
@@ -244,7 +245,8 @@ class MovimentacaoControllerIntegrationTest extends IntegrationTestBase {
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.descricao").value("Venda no cartao"))
-            .andExpect(jsonPath("$.status").value("PAGO"));
+            .andExpect(jsonPath("$.status").value("PAGO"))
+            .andExpect(jsonPath("$.dataVencimento").isEmpty());
     }
 
     @Test
@@ -335,7 +337,8 @@ class MovimentacaoControllerIntegrationTest extends IntegrationTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("PAGO"));
+            .andExpect(jsonPath("$.status").value("PAGO"))
+            .andExpect(jsonPath("$.dataVencimento").isEmpty());
     }
 
     private Usuario salvarUsuario(String nome, String email) {

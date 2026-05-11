@@ -70,13 +70,14 @@ export default function HistoryPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [editingTransaction, setEditingTransaction] = useState<TransactionItem | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<TransactionItem | null>(null);
   const requestSeqRef = useRef(0);
 
   useEffect(() => {
     categoriesService
       .getAllCategories()
       .then(setCategories)
-      .catch(() => toast.error("Erro ao carregar categorias"));
+      .catch(() => toast.error("Erro ao carregar categorias."));
   }, []);
 
   const loadTransactions = useCallback(
@@ -116,7 +117,7 @@ export default function HistoryPage() {
         setTotalPages(nextTotalPages ?? 0);
       } catch {
         if (requestSeq === requestSeqRef.current) {
-          toast.error("Erro ao sincronizar com o servidor");
+          toast.error("Erro ao sincronizar com o servidor.");
         }
       } finally {
         if (requestSeq === requestSeqRef.current) {
@@ -157,7 +158,7 @@ export default function HistoryPage() {
       );
       toast.success("Status atualizado.");
     } catch {
-      toast.error("Erro ao atualizar no servidor");
+      toast.error("Erro ao atualizar no servidor.");
     }
   };
 
@@ -175,26 +176,22 @@ export default function HistoryPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    toast("Deseja realmente excluir?", {
-      description: "Esta ação não pode ser desfeita.",
-      action: {
-        label: "Excluir",
-        onClick: async () => {
-          try {
-            await transactionService.deleteTransaction(id);
-            setTransactions((current) =>
-              current.filter((transaction) => transaction.id !== id),
-            );
-            toast.success("Movimentação removida.");
-            setEditingTransaction(null);
-          } catch {
-            toast.error("Erro ao excluir no servidor.");
-          }
-        },
-      },
-      cancel: { label: "Cancelar", onClick: () => undefined },
-    });
+  const handleDelete = async () => {
+    if (!transactionToDelete) {
+      return;
+    }
+
+    try {
+      await transactionService.deleteTransaction(transactionToDelete.id);
+      setTransactions((current) =>
+        current.filter((transaction) => transaction.id !== transactionToDelete.id),
+      );
+      toast.success("Movimentação removida.");
+      setTransactionToDelete(null);
+      setEditingTransaction(null);
+    } catch {
+      toast.error("Erro ao excluir no servidor.");
+    }
   };
 
   const groupedTransactions = useMemo((): HistoryGroup[] => {
@@ -280,8 +277,16 @@ export default function HistoryPage() {
           categories={categories}
           transaction={editingTransaction}
           onClose={() => setEditingTransaction(null)}
-          onDelete={handleDelete}
+          onDeleteRequest={() => setTransactionToDelete(editingTransaction)}
           onSave={handleSaveEdit}
+        />
+      ) : null}
+
+      {transactionToDelete ? (
+        <DeleteTransactionModal
+          transaction={transactionToDelete}
+          onClose={() => setTransactionToDelete(null)}
+          onConfirm={handleDelete}
         />
       ) : null}
     </div>
@@ -363,13 +368,13 @@ function TransactionCard({
 function EditTransactionModal({
   categories,
   onClose,
-  onDelete,
+  onDeleteRequest,
   onSave,
   transaction,
 }: {
   categories: TransactionCategory[];
   onClose: () => void;
-  onDelete: (id: string) => Promise<void>;
+  onDeleteRequest: () => void;
   onSave: (id: string, updatedData: UpdateTransactionPayload) => Promise<void>;
   transaction: TransactionItem;
 }) {
@@ -378,12 +383,15 @@ function EditTransactionModal({
   const [amount, setAmount] = useState(transaction.amount.toString());
   const [amountError, setAmountError] = useState("");
   const [date, setDate] = useState(transaction.date);
+  const [dueDate, setDueDate] = useState(transaction.dueDate ?? "");
+  const [dueDateError, setDueDateError] = useState("");
   const [categoryId, setCategoryId] = useState(transaction.categoryId);
   const [status, setStatus] = useState<"settled" | "pending">(
     transaction.status === "settled" ? "settled" : "pending",
   );
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const dueDateInputRef = useRef<HTMLInputElement>(null);
 
   const apiKind = kindToApi(transaction.kind);
   const apiScope = scopeToApi(transaction.scope);
@@ -408,6 +416,12 @@ function EditTransactionModal({
     }
   }, [categoryId, selectedCategory]);
 
+  useEffect(() => {
+    if (status !== "pending" || dueDate) {
+      setDueDateError("");
+    }
+  }, [dueDate, status]);
+
   const handleAmountChange = (value: string) => {
     const sanitizedValue = value.replace("-", "");
     setAmount(sanitizedValue);
@@ -428,13 +442,18 @@ function EditTransactionModal({
       return;
     }
 
+    if (status === "pending" && !dueDate) {
+      setDueDateError("Informe a data de vencimento.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await onSave(transaction.id, {
         valor: Number(amount),
         descricao: title.trim(),
         data: date,
-        dataVencimento: status === "pending" ? transaction.dueDate ?? date : null,
+        dataVencimento: status === "pending" ? dueDate : null,
         tipo: apiKind,
         classificacao: apiScope,
         status: statusToApi(transaction.kind, status),
@@ -453,7 +472,7 @@ function EditTransactionModal({
         footer={
           <button
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-error/15 bg-error-container/25 px-4 text-sm font-bold text-error transition hover:bg-error-container/40"
-            onClick={() => onDelete(transaction.id)}
+            onClick={onDeleteRequest}
             type="button"
           >
             <AppIcon className="h-4 w-4" name="trash" />
@@ -554,9 +573,9 @@ function EditTransactionModal({
             </button>
           </div>
 
-          <div className="space-y-2 rounded-2xl border border-surface-container-high p-3">
-            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
-              Status
+	          <div className="space-y-2 rounded-2xl border border-surface-container-high p-3">
+	            <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+	              Status
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -580,12 +599,63 @@ function EditTransactionModal({
                 type="button"
               >
                 {transaction.kind === "income" ? "A receber" : "A pagar"}
-              </button>
-            </div>
-          </div>
+	              </button>
+	            </div>
+	          </div>
 
-          <Button fullWidth isLoading={isSubmitting} type="submit">
-            Salvar
+            {status === "pending" ? (
+              <div className="space-y-1.5">
+                <label className="block px-1 text-xs font-medium text-on-surface-variant sm:text-sm">
+                  Data de vencimento
+                </label>
+                <div className="relative">
+                  <button
+                    aria-describedby={dueDateError ? "edit-transaction-due-date-error" : undefined}
+                    aria-invalid={Boolean(dueDateError)}
+                    className={
+                      dueDateError
+                        ? "flex min-h-14 w-full items-center gap-2 rounded-xl border border-error bg-error-container/10 px-4 text-left text-sm ring-2 ring-error/30 transition hover:bg-error-container/20 focus:outline-none focus:ring-2 focus:ring-error/30"
+                        : "flex min-h-14 w-full items-center gap-2 rounded-xl border border-error/40 bg-error-container/5 px-4 text-left text-sm transition hover:bg-error-container/15 focus:outline-none focus:ring-2 focus:ring-error/20"
+                    }
+                    onClick={() => {
+                      dueDateInputRef.current?.focus();
+                      (
+                        dueDateInputRef.current as HTMLInputElement & {
+                          showPicker?: () => void;
+                        } | null
+                      )?.showPicker?.();
+                    }}
+                    type="button"
+                  >
+                    <AppIcon className="h-4 w-4 shrink-0 text-error" name="calendar" />
+                    <span className="flex-1 text-center font-medium text-error">
+                      {dueDate ? formatDateBRL(dueDate) : "Selecionar"}
+                    </span>
+                    <span aria-hidden="true" className="h-4 w-4 shrink-0" />
+                  </button>
+                  <input
+                    ref={dueDateInputRef}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute h-px w-px opacity-0"
+                    tabIndex={-1}
+                    type="date"
+                    value={dueDate}
+                    onChange={(event) => setDueDate(event.target.value)}
+                  />
+                </div>
+                {dueDateError ? (
+                  <p
+                    className="px-1 text-xs font-medium text-error"
+                    id="edit-transaction-due-date-error"
+                  >
+                    {dueDateError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+	          <Button fullWidth isLoading={isSubmitting} type="submit">
+	            Salvar
           </Button>
       </Modal>
 
@@ -601,6 +671,62 @@ function EditTransactionModal({
         />
       ) : null}
     </>
+  );
+}
+
+function DeleteTransactionModal({
+  onClose,
+  onConfirm,
+  transaction,
+}: {
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  transaction: TransactionItem;
+}) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirm = async () => {
+    try {
+      setIsDeleting(true);
+      await onConfirm();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <Modal
+      contentClassName="space-y-4"
+      footer={
+        <div className="grid grid-cols-2 gap-3">
+          <Button fullWidth variant="secondary" onClick={onClose} type="button">
+            Cancelar
+          </Button>
+          <Button
+            className="bg-error text-on-primary shadow-none hover:bg-error/90"
+            fullWidth
+            isLoading={isDeleting}
+            onClick={handleConfirm}
+            type="button"
+          >
+            Excluir
+          </Button>
+        </div>
+      }
+      onClose={onClose}
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-error-container/40 text-error">
+        <AppIcon name="trash" />
+      </div>
+      <div>
+        <h2 className="font-headline text-xl font-bold text-on-surface">
+          Excluir movimentação?
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+          A movimentação {transaction.title} será removida permanentemente.
+        </p>
+      </div>
+    </Modal>
   );
 }
 

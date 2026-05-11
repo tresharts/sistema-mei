@@ -1,5 +1,6 @@
 package com.api.SistemaMEI.movimentacao;
 
+import com.api.SistemaMEI.categoria.Categoria;
 import com.api.SistemaMEI.financeiro.ClassificacaoFinanceira;
 import com.api.SistemaMEI.financeiro.StatusMovimentacao;
 import com.api.SistemaMEI.financeiro.TipoMovimentacao;
@@ -18,6 +19,8 @@ import java.util.UUID;
 public interface MovimentacaoRepository extends JpaRepository<Movimentacao, UUID> {
 
     Optional<Movimentacao> findByIdAndUsuario(UUID id, Usuario usuario);
+
+    boolean existsByCategoria(Categoria categoria);
 
     @Query("""
         SELECT m

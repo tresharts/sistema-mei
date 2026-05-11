@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ROUTE_PATHS } from './constants';
+import { clearAccessToken, getAccessToken, setAccessToken } from './session';
 
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -27,14 +28,13 @@ export async function refreshSession(): Promise<string | null> {
 
       const refreshedAcessToken = response.data.acessToken;
       if (!refreshedAcessToken) {
-        localStorage.removeItem('acessToken');
+        clearAccessToken();
         return null;
       }
 
-      localStorage.setItem('acessToken', refreshedAcessToken);
-      return refreshedAcessToken;
+      return setAccessToken(refreshedAcessToken);
     } catch {
-      localStorage.removeItem('acessToken');
+      clearAccessToken();
       return null;
     } finally {
       refreshInFlight = null;
@@ -50,7 +50,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('acessToken');
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

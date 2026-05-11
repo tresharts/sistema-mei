@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -73,6 +74,7 @@ class MovimentacaoServiceTest {
         assertEquals("Venda no cartao", response.descricao());
         assertEquals(TipoMovimentacao.RECEITA, response.tipo());
         assertEquals(StatusMovimentacao.RECEBIDO, response.status());
+        assertNull(response.dataVencimento());
         assertEquals(categoria.getId(), response.categoriaId());
         assertEquals("Vendas", response.categoriaNome());
     }
@@ -289,6 +291,7 @@ class MovimentacaoServiceTest {
         MovimentacaoResponse response = service.editar(movimentacao.getId(), request, usuario);
 
         assertEquals(StatusMovimentacao.PAGO, response.status());
+        assertNull(response.dataVencimento());
         assertEquals(categoriaNova.getId(), response.categoriaId());
         assertEquals("Transporte", response.categoriaNome());
         assertEquals("Venda no cartao", response.descricao());
@@ -358,6 +361,7 @@ class MovimentacaoServiceTest {
         MovimentacaoResponse response = service.atualizarStatus(movimentacao.getId(), request, usuario);
 
         assertEquals(StatusMovimentacao.PAGO, response.status());
+        assertNull(response.dataVencimento());
     }
 
     @Test
