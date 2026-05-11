@@ -81,8 +81,8 @@ function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background lg:grid lg:grid-cols-2">
-      <section className="min-h-[24vh] bg-background px-6 py-8 lg:flex lg:min-h-screen lg:flex-col lg:items-center lg:justify-center lg:gap-1">
+    <main className="flex min-h-screen flex-col justify-center gap-4 bg-background lg:grid lg:grid-cols-2 lg:gap-0">
+      <section className="bg-background px-6 pt-8 lg:flex lg:min-h-screen lg:flex-col lg:items-center lg:justify-center lg:gap-1 lg:pt-0">
         <div className="flex items-center justify-center gap-3 lg:hidden">
           <img alt="BoraMEI" className="h-9 w-9 object-contain" src={favicon} />
           <h1 className="font-headline text-3xl font-extrabold text-primary">
@@ -102,7 +102,7 @@ function LoginPage() {
         </div>
       </section>
 
-      <section className="flex min-h-[58vh] items-center justify-center px-4 py-8 lg:min-h-screen lg:px-12">
+      <section className="flex items-center justify-center px-4 pb-8 lg:min-h-screen lg:px-12 lg:pb-0">
         <div className="w-full max-w-md">
           <section className="rounded-[2rem] rounded-bl-xl bg-surface-container-lowest p-6 shadow-[0_16px_40px_rgba(52,50,47,0.08)]">
             <div className="mb-6 space-y-2 text-center">

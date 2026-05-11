@@ -351,7 +351,7 @@ function SettingsPage() {
 
   return (
     <div className="grid gap-10 lg:grid-cols-[0.9fr_1.4fr] lg:items-start">
-      <div className="space-y-10 lg:sticky lg:top-24">
+      <div className="space-y-10 lg:sticky lg:top-24 lg:space-y-5">
       <section className="space-y-4">
         <div className="flex items-center gap-5 rounded-[1.5rem] rounded-bl-lg bg-surface-container-lowest p-6 shadow-editorial">
           <div className="relative">
@@ -381,42 +381,44 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="hidden space-y-4 rounded-2xl bg-primary/5 p-6 lg:block">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <AppIcon className="text-primary" name="heart" />
+      <div className="hidden space-y-4 lg:block">
+        <section className="space-y-4 rounded-2xl bg-primary/5 p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <AppIcon className="text-primary" name="heart" />
+            </div>
+            <div>
+              <h3 className="font-headline font-bold text-on-surface">
+                Alguma dúvida?
+              </h3>
+              <p className="text-xs text-on-surface-variant">
+                Estamos aqui para cuidar do seu negócio.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-headline font-bold text-on-surface">
-              Alguma dúvida?
-            </h3>
-            <p className="text-xs text-on-surface-variant">
-              Estamos aqui para cuidar do seu negócio.
-            </p>
-          </div>
+
+          <button
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
+            type="button"
+          >
+            <AppIcon className="h-4 w-4" name="chat" />
+            Conversar com suporte
+          </button>
+        </section>
+
+        <div className="space-y-2 pb-8">
+          <button
+            onClick={handleLogout}
+            className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
+            type="button"
+          >
+            <AppIcon name="logout" />
+            Sair da conta
+          </button>
+          <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
+            BoraMEI v0.1.0
+          </p>
         </div>
-
-        <button
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
-          type="button"
-        >
-          <AppIcon className="h-4 w-4" name="chat" />
-          Conversar com suporte
-        </button>
-      </section>
-
-      <div className="hidden space-y-6 pb-8 pt-2 lg:block">
-        <button
-          onClick={handleLogout}
-          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
-          type="button"
-        >
-          <AppIcon name="logout" />
-          Sair da conta
-        </button>
-        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
-          BoraMEI v0.1.0
-        </p>
       </div>
       </div>
 
@@ -634,42 +636,44 @@ function SettingsPage() {
         </Button>
       </section>
 
-      <section className="space-y-4 rounded-2xl bg-primary/5 p-6 lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <AppIcon className="text-primary" name="heart" />
+      <div className="space-y-4 pb-8 lg:hidden">
+        <section className="space-y-4 rounded-2xl bg-primary/5 p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <AppIcon className="text-primary" name="heart" />
+            </div>
+            <div>
+              <h3 className="font-headline font-bold text-on-surface">
+                Alguma dúvida?
+              </h3>
+              <p className="text-xs text-on-surface-variant">
+                Estamos aqui para cuidar do seu negócio.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-headline font-bold text-on-surface">
-              Alguma dúvida?
-            </h3>
-            <p className="text-xs text-on-surface-variant">
-              Estamos aqui para cuidar do seu negócio.
-            </p>
-          </div>
+
+          <button
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
+            type="button"
+          >
+            <AppIcon className="h-4 w-4" name="chat" />
+            Conversar com suporte
+          </button>
+        </section>
+
+        <div className="space-y-2">
+          <button
+            onClick={handleLogout}
+            className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
+            type="button"
+          >
+            <AppIcon name="logout" />
+            Sair da conta
+          </button>
+          <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
+            BoraMEI v0.1.0
+          </p>
         </div>
-
-        <button
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface-container-lowest text-sm font-bold text-primary transition hover:bg-primary/5"
-          type="button"
-        >
-          <AppIcon className="h-4 w-4" name="chat" />
-          Conversar com suporte
-        </button>
-      </section>
-
-      <div className="space-y-6 pb-8 pt-2 lg:hidden">
-        <button
-          onClick={handleLogout}
-          className="flex h-16 w-full items-center justify-center gap-3 rounded-full bg-surface-container-high font-bold text-error transition hover:bg-surface-container-highest"
-          type="button"
-        >
-          <AppIcon name="logout" />
-          Sair da conta
-        </button>
-        <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant/40">
-          BoraMEI v0.1.0
-        </p>
       </div>
 
       </div>
