@@ -142,6 +142,10 @@ function SettingsPage() {
     () => categories.filter((category) => !category.isDefault).length,
     [categories],
   );
+  const customCategories = useMemo(
+    () => categories.filter((category) => !category.isDefault),
+    [categories],
+  );
 
   const notificationItems = useMemo<
     Array<{
@@ -473,9 +477,9 @@ function SettingsPage() {
               />
             ))}
           </div>
-        ) : categories.length > 0 ? (
+        ) : customCategories.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {categories.map((category) => (
+            {customCategories.map((category) => (
               <CategoryCard
                 key={category.id}
                 category={category}
@@ -486,7 +490,7 @@ function SettingsPage() {
           </div>
         ) : (
           <div className="rounded-xl bg-surface-container-low p-4 text-sm text-on-surface-variant">
-            Nenhuma categoria encontrada.
+            Nenhuma categoria personalizada encontrada.
           </div>
         )}
 
