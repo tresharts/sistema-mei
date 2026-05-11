@@ -62,7 +62,9 @@
 
   .modal-overlay {
     animation: modal-overlay-in 180ms ease-out both;
-    @apply fixed inset-0 z-50 flex items-end bg-on-surface/30 px-4 pb-4 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6 lg:pl-[15.5rem] lg:pt-[5.5rem];
+    z-index: 70;
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+    @apply fixed inset-0 flex items-end bg-on-surface/30 px-4 pt-4 backdrop-blur-sm sm:items-center sm:justify-center sm:p-6 lg:pl-[15.5rem] lg:pt-[5.5rem];
   }
 
   .modal-panel {
