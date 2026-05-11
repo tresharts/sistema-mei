@@ -77,6 +77,15 @@ public class MovimentacaoService {
         }
     }
 
+    private LocalDate resolverDataVencimento(StatusMovimentacao status, LocalDate dataVencimento) {
+        validarDataVencimento(status, dataVencimento);
+
+        boolean statusPendente = status == StatusMovimentacao.A_PAGAR
+            || status == StatusMovimentacao.A_RECEBER;
+
+        return statusPendente ? dataVencimento : null;
+    }
+
     private MovimentacaoResponse toResponse(Movimentacao movimentacao) {
         return new MovimentacaoResponse(
             movimentacao.getId(),
@@ -97,7 +106,7 @@ public class MovimentacaoService {
     @Transactional
     public MovimentacaoResponse criar(MovimentacaoRequest request, Usuario usuario) {
         validarStatusPorTipo(request.tipo(), request.status());
-        validarDataVencimento(request.status(), request.dataVencimento());
+        LocalDate dataVencimento = resolverDataVencimento(request.status(), request.dataVencimento());
 
         Categoria categoria = buscarCategoriaDoUsuario(request.categoriaId(), usuario);
         validarCategoriaCompativel(categoria, request.tipo(), request.classificacao());
@@ -107,7 +116,7 @@ public class MovimentacaoService {
             .valor(request.valor())
             .descricao(request.descricao().trim())
             .data(request.data())
-            .dataVencimento(request.dataVencimento())
+            .dataVencimento(dataVencimento)
             .tipo(request.tipo())
             .classificacao(request.classificacao())
             .status(request.status())
@@ -149,7 +158,7 @@ public class MovimentacaoService {
         Movimentacao movimentacao = buscarMovimentacaoDoUsuario(id, usuario);
 
         validarStatusPorTipo(request.tipo(), request.status());
-        validarDataVencimento(request.status(), request.dataVencimento());
+        LocalDate dataVencimento = resolverDataVencimento(request.status(), request.dataVencimento());
 
         Categoria categoria = buscarCategoriaDoUsuario(request.categoriaId(), usuario);
         validarCategoriaCompativel(categoria, request.tipo(), request.classificacao());
@@ -157,7 +166,7 @@ public class MovimentacaoService {
         movimentacao.setValor(request.valor());
         movimentacao.setDescricao(request.descricao().trim());
         movimentacao.setData(request.data());
-        movimentacao.setDataVencimento(request.dataVencimento());
+        movimentacao.setDataVencimento(dataVencimento);
         movimentacao.setTipo(request.tipo());
         movimentacao.setClassificacao(request.classificacao());
         movimentacao.setStatus(request.status());
@@ -182,9 +191,10 @@ public class MovimentacaoService {
         Movimentacao movimentacao = buscarMovimentacaoDoUsuario(id, usuario);
 
         validarStatusPorTipo(movimentacao.getTipo(), request.status());
-        validarDataVencimento(request.status(), movimentacao.getDataVencimento());
+        LocalDate dataVencimento = resolverDataVencimento(request.status(), movimentacao.getDataVencimento());
 
         movimentacao.setStatus(request.status());
+        movimentacao.setDataVencimento(dataVencimento);
 
         Movimentacao movimentacaoSalva = movimentacaoRepository.save(movimentacao);
         return toResponse(movimentacaoSalva);
