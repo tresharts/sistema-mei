@@ -118,7 +118,7 @@ function DesktopSidebar() {
         <Link className="flex items-center gap-3 rounded-2xl px-2 py-1" to={ROUTE_PATHS.dashboard}>
           <BrandLogo />
           <div className="min-w-0">
-            <p className="truncate font-headline text-base font-extrabold text-primary">
+            <p className="mt-4 truncate font-headline text-2xl font-extrabold text-primary">
               BoraMEI
             </p>
           </div>
