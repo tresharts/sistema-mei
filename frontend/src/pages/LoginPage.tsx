@@ -81,8 +81,8 @@ function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col justify-center gap-4 bg-background lg:grid lg:grid-cols-2 lg:gap-0">
-      <section className="bg-background px-6 pt-8 lg:flex lg:min-h-screen lg:flex-col lg:items-center lg:justify-center lg:gap-1 lg:pt-0">
+    <main className="flex h-[100dvh] flex-col justify-center gap-4 overflow-hidden bg-background lg:grid lg:h-auto lg:min-h-screen lg:grid-cols-2 lg:gap-0 lg:overflow-visible">
+      <section className="bg-background px-6 lg:flex lg:min-h-screen lg:flex-col lg:items-center lg:justify-center lg:gap-1">
         <div className="flex items-center justify-center gap-3 lg:hidden">
           <img alt="BoraMEI" className="h-9 w-9 object-contain" src={favicon} />
           <h1 className="font-headline text-3xl font-extrabold text-primary">
@@ -102,17 +102,17 @@ function LoginPage() {
         </div>
       </section>
 
-      <section className="flex items-center justify-center px-4 pb-8 lg:min-h-screen lg:px-12 lg:pb-0">
+      <section className="flex items-center justify-center px-4 lg:min-h-screen lg:px-12">
         <div className="w-full max-w-md">
-          <section className="rounded-[2rem] rounded-bl-xl bg-surface-container-lowest p-6 shadow-[0_16px_40px_rgba(52,50,47,0.08)]">
-            <div className="mb-6 space-y-2 text-center">
+          <section className="rounded-[2rem] rounded-bl-xl bg-surface-container-lowest p-5 shadow-[0_16px_40px_rgba(52,50,47,0.08)] sm:p-6">
+            <div className="mb-5 space-y-2 text-center sm:mb-6">
               <p className="text-xl font-medium text-on-surface-variant">
                 Entrar na sua conta
               </p>
             </div>
 
             <form
-              className="flex flex-col gap-4 space-y-4"
+              className="flex flex-col gap-4"
               onSubmit={handleSubmit(onSubmit)}
             >
               <div className="space-y-2">
@@ -163,7 +163,7 @@ function LoginPage() {
               </Button>
             </form>
 
-            <footer className="mt-8 text-center">
+            <footer className="mt-6 text-center sm:mt-8">
               <p className="text-sm text-on-surface-variant">
                 Não tem uma conta?{" "}
                 <Link
