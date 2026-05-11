@@ -6,6 +6,7 @@ import Input from "../components/ui/Input";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import boraMeiLogo from "../assets/boramei-logo.png";
+import favicon from "../assets/favicon.png";
 import { ROUTE_PATHS } from "../lib/constants";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -81,12 +82,24 @@ function LoginPage() {
 
   return (
     <main className="min-h-screen bg-background lg:grid lg:grid-cols-2">
-      <section className="min-h-[42vh] overflow-hidden bg-surface-container-low lg:min-h-screen">
-        <img
-          alt="BoraMEI"
-          className="h-full w-full object-cover"
-          src={boraMeiLogo}
-        />
+      <section className="min-h-[24vh] bg-background px-6 py-8 lg:flex lg:min-h-screen lg:flex-col lg:items-center lg:justify-center lg:gap-1">
+        <div className="flex items-center justify-center gap-3 lg:hidden">
+          <img alt="BoraMEI" className="h-9 w-9 object-contain" src={favicon} />
+          <h1 className="font-headline text-3xl font-extrabold text-primary">
+            BoraMEI
+          </h1>
+        </div>
+
+        <div className="hidden lg:flex lg:flex-col lg:items-center lg:gap-1">
+          <h1 className="font-headline text-4xl font-extrabold text-primary sm:text-5xl">
+            BoraMEI
+          </h1>
+          <img
+            alt="BoraMEI"
+            className="h-auto w-full max-w-[18rem] object-contain sm:max-w-[21rem] lg:max-w-[28rem]"
+            src={boraMeiLogo}
+          />
+        </div>
       </section>
 
       <section className="flex min-h-[58vh] items-center justify-center px-4 py-8 lg:min-h-screen lg:px-12">
